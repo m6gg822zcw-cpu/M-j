@@ -274,7 +274,7 @@ final class ComicCanvasView: UIView, UIGestureRecognizerDelegate {
         handle(resizePoint(b), color: .systemTeal)
         if b.tailEnabled, b.style != .caption { handle(tailPoint(b), color: .systemOrange) }
     }
-    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard editable else { return false }
         var p = gestureRecognizer.location(in: self)
         if let pan = gestureRecognizer as? UIPanGestureRecognizer {
