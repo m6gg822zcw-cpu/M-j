@@ -365,6 +365,8 @@ final class PersistenceAndPipelineTests: XCTestCase {
         try await repo.exportProject(p.id, artist: a, destination: dest)
         let data = try Data(contentsOf: dest)
         let zip = try ZIPArchive(data: data)
+        XCTAssertTrue(zip.entries.contains { $0.name == "Chapters/1-source.json" })
+        XCTAssertTrue(zip.entries.contains { $0.name == "Artist.json" })
         XCTAssertFalse(
             zip.entries.contains {
                 $0.name.contains("Settings") || $0.name.contains("Jobs") || $0.name.contains("Receipts")
@@ -374,6 +376,31 @@ final class PersistenceAndPipelineTests: XCTestCase {
         XCTAssertEqual(restored.artistID, a.id)
         let run = try await repo.chapter(restored.id, ordinal: 1, chunk: 3000)
         XCTAssertEqual(run.units[0].text, "林舟站在书店。")
+    }
+    func testBackupUsesCanonicalProjectDirectoryAndRelativeEntryNames() async throws {
+        let (repo, p, _) = try await seeded()
+        defer { try? FileManager.default.removeItem(at: repo.root) }
+        try await repo.saveAsset(p.id, path: "Images/original.png", data: png)
+        _ = try await repo.beginReceipt(
+            projectID: p.id, chapter: 1, target: "panel:P0001", fingerprint: "x", prompt: "",
+            requestJSON: "private request")
+        try Data("private journal".utf8).write(to: await repo.file(p.id, "Journal.json"))
+        let folder = await repo.folder(p.id)
+        let relocated = repo.root.appendingPathComponent("重定位 project", isDirectory: true)
+        try FileManager.default.moveItem(at: folder, to: relocated)
+        try FileManager.default.createSymbolicLink(at: folder, withDestinationURL: relocated)
+        let destination = repo.root.appendingPathComponent("canonical.moxu")
+        try await repo.exportProject(p.id, artist: ArtistPreset(), destination: destination)
+        let data = try Data(contentsOf: destination)
+        let zip = try ZIPArchive(data: data)
+        XCTAssertEqual(
+            Set(zip.entries.map(\.name)),
+            ["Project.json", "Artist.json", "Chapters/1-source.json", "Chapters/2-source.json", "Images/original.png"])
+        let restored = try await repo.restoreProject(data)
+        let run = try await repo.chapter(restored.id, ordinal: 1, chunk: 3000)
+        let image = try await repo.asset(restored.id, path: "Images/original.png")
+        XCTAssertEqual(run.units[0].text, "林舟站在书店。")
+        XCTAssertEqual(image, png)
     }
     func testPastMemoryNeverReadsFutureAndJournalRecovers() async throws {
         let (repo, p, varRun) = try await seeded()

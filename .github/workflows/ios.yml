@@ -18,6 +18,8 @@ jobs:
         run: xcodebuild -version
       - name: Core tests and simulator build
         run: bash Scripts/build.sh
+      - name: Launch on a temporary iPhone simulator
+        run: bash Scripts/simulator_smoke.sh
       - name: Archive device app without signing
         run: bash Scripts/archive_unsigned.sh
       - uses: actions/upload-artifact@v4
@@ -36,5 +38,6 @@ jobs:
           path: |
             build/logs/*.log
             build/UnsignedArchive/run.*/archive.log
+            build/smoke/
           if-no-files-found: warn
           retention-days: 14

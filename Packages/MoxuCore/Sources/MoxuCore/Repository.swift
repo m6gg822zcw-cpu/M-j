@@ -202,7 +202,9 @@ public actor Repository {
         let snapshot = destination.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".json")
         try Codec.encode(exported).write(to: snapshot, options: .atomic)
         defer { try? fm.removeItem(at: snapshot) }
-        let base = folder(id)
+        // Foundation can expose different path spellings for the same directory (e.g. /var and /private/var).
+        let base = folder(id).standardizedFileURL.resolvingSymlinksInPath()
+        let baseComponents = base.pathComponents
         var files: [String: URL] = [:]
         let keys: [URLResourceKey] = [.isRegularFileKey, .isSymbolicLinkKey]
         guard let iterator = fm.enumerator(at: base, includingPropertiesForKeys: keys) else {
@@ -211,8 +213,13 @@ public actor Repository {
         for case let url as URL in iterator {
             let info = try url.resourceValues(forKeys: Set(keys))
             if info.isRegularFile == true, info.isSymbolicLink != true {
-                let relative = String(url.path.dropFirst(base.path.count + 1))
-                if !relative.hasPrefix("Receipts/") && relative != "Journal.json" { files[relative] = url }
+                let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+                let components = canonical.pathComponents
+                guard components.count > baseComponents.count, components.starts(with: baseComponents) else {
+                    throw StudioError.invalid("工程路径越界。")
+                }
+                let relative = components.dropFirst(baseComponents.count).joined(separator: "/")
+                if !relative.hasPrefix("Receipts/") && relative != "Journal.json" { files[relative] = canonical }
             }
         }
         files["Project.json"] = snapshot
