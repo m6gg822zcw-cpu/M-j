@@ -2,7 +2,7 @@
 
 这是墨序 iOS 原生源码 v1.1.2（build 4），用户要求完成 iOS 编译并生成 IPA。优先使用已有 Mac / macOS CI 与签名环境继续构建、修复和验收。项目入口为 `Moxu.xcodeproj`，scheme 为 `Moxu`，最低 iOS 17，建议 Xcode 16 或更新。
 
-**当前状态（v1.1.2 build 4）：**Linux 87 项核心测试通过；本版真实 Xcode 编译、模拟器启动、本地文件导入与导出检查及更新 IPA 正在验证。上版 v1.1.1 已完成真实 iOS 构建。结果见 [修复记录](Docs/v1.1.2_导入与整页漫画.md)。
+**当前状态（v1.1.2 build 4）：**Linux / macOS 87 项核心测试、8 项打包校验、真实 Xcode 编译、模拟器启动及 9 项本地导入/导出检查通过；Release iPhoneOS arm64 未签名 IPA 已生成并校验。需要有效签名后安装。结果见 [修复记录](Docs/v1.1.2_导入与整页漫画.md)。
 
 ## 最短打包路径
 
