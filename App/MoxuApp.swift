@@ -11,7 +11,12 @@ import UIKit
             RootView().environmentObject(studio)
                 .onOpenURL { url in Task { await studio.importFile(url) } }
                 .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
-                .task { await studio.load() }
+                .task {
+                    await studio.load()
+                    #if DEBUG
+                        await studio.runNativeSmokeChecksIfRequested()
+                    #endif
+                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .background {
                         studio.pauseForBackground()

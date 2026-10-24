@@ -9,9 +9,12 @@ enum ExportKind { case backup, pdf, png, html }
 actor ComicExporter {
     static let shared = ComicExporter()
     private let pageSize = CGSize(width: 1170, height: 1656)
-    private struct Layout { var index: Int, y: CGFloat, height: CGFloat, imageHeight: CGFloat }
+    private struct Layout { var index: Int, rect: CGRect }
     private let margin: CGFloat = 64, contentWidth: CGFloat = 1042
-    func export(_ kind: ExportKind, project: Project, run: ChapterRun, repository: Repository, artist: ArtistPreset)
+    func export(
+        _ kind: ExportKind, project: Project, run: ChapterRun, repository: Repository, artist: ArtistPreset,
+        panelsPerPage: Int = 4
+    )
         async throws -> URL
     {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(
@@ -33,7 +36,18 @@ actor ComicExporter {
                 throw StudioError.invalid("\(run.panels[index].id) 有气泡文字放不下，请在「调整气泡」放大或修改后再导出。")
             }
         }
-        let pages = layouts(run: run, assets: assets)
+        let pages = layouts(run: run, panelsPerPage: panelsPerPage)
+        for items in pages {
+            for item in items where assets[item.index] == nil {
+                let textRect = placeholderRect(in: item.rect)
+                guard textHeight(placeholderText(run.panels[item.index]), size: 14, width: textRect.width)
+                    <= textRect.height
+                else {
+                    throw StudioError.invalid(
+                        "\(run.panels[item.index].id) 的未出图文字超出页面空间，请改为每页1格或先生成图片后再导出。")
+                }
+            }
+        }
         if kind == .pdf {
             let url = folder.appendingPathComponent(base + ".pdf")
             let format = UIGraphicsPDFRendererFormat()
@@ -94,11 +108,13 @@ actor ComicExporter {
         try? FileManager.default.removeItem(at: images)
         return out
     }
-    private func resolveAssets(_ project: Project, _ run: ChapterRun, _ repository: Repository) async throws -> [Int:
-        URL]
-    {
+    private func resolveAssets(
+        _ project: Project, _ run: ChapterRun, _ repository: Repository, indices: [Int]? = nil
+    ) async throws -> [Int: URL] {
         var assets: [Int: URL] = [:]
-        for (i, panel) in run.panels.enumerated() {
+        for i in indices ?? Array(run.panels.indices) {
+            try Task.checkCancellation()
+            let panel = run.panels[i]
             if let path = panel.imageFile {
                 guard try await repository.exists(project.id, path: path) else {
                     throw StudioError.invalid("\(panel.id) 图片缺失，请恢复图片后再导出。")
@@ -117,12 +133,27 @@ actor ComicExporter {
             ).height)
     }
     private func caption(_ panel: ComicPanel) -> String {
+        // A saved empty layer deliberately suppresses the original dialogue, including without an image.
+        if let saved = panel.lettering {
+            return ((try? saved.validated())?.bubbles ?? []).filter { !$0.hidden }
+                .map(\.displayedText).filter { !$0.isEmpty }.joined(separator: "\n")
+        }
         var parts = panel.dialogue.map { d in
             "\(d.speaker)\(d.kind == "thought" ? "（心声）":d.kind == "offscreen" ? "（画外）":"")：\(d.text)"
         }
-        if !panel.sfx.isEmpty { parts.append("音效：\(panel.sfx)") }
+        if let sfx = SoundEffects.displayText(panel.sfx) { parts.append("音效：\(sfx)") }
         return parts.joined(separator: "\n")
     }
+    private func placeholderText(_ panel: ComicPanel) -> String {
+        var parts = ["尚未出图", panel.action]
+        if panel.lettering == nil, !panel.narration.isEmpty { parts.append(panel.narration) }
+        parts.append(caption(panel))
+        return parts.filter { !$0.isEmpty }.joined(separator: "\n\n")
+    }
+    private func imageBounds(in cell: CGRect) -> CGRect {
+        CGRect(x: cell.minX + 10, y: cell.minY + 38, width: cell.width - 20, height: cell.height - 48)
+    }
+    private func placeholderRect(in cell: CGRect) -> CGRect { imageBounds(in: cell).insetBy(dx: 20, dy: 20) }
     private func ratio(_ url: URL?) -> CGFloat {
         guard let url, let source = CGImageSourceCreateWithURL(url as CFURL, nil),
             let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
@@ -133,28 +164,12 @@ actor ComicExporter {
         return orientation >= 5
             ? CGFloat(w.doubleValue / max(1, h.doubleValue)) : CGFloat(h.doubleValue / max(1, w.doubleValue))
     }
-    private func layouts(run: ChapterRun, assets: [Int: URL]) -> [[Layout]] {
-        var pages: [[Layout]] = []
-        var current: [Layout] = []
-        var y: CGFloat = 142
-        for (i, p) in run.panels.enumerated() {
-            let extra: CGFloat =
-                assets[i] != nil
-                ? 100
-                : textHeight(p.narration, size: 28, width: contentWidth)
-                    + textHeight(caption(p), size: 30, width: contentWidth) + 100
-            let imageH = min(1280, max(260, contentWidth * ratio(assets[i])))
-            let height = min(1410, imageH + extra)
-            if y + height > 1560, !current.isEmpty {
-                pages.append(current)
-                current = []
-                y = 142
-            }
-            current.append(Layout(index: i, y: y, height: height, imageHeight: max(200, height - extra)))
-            y += height + 24
+    private func layouts(run: ChapterRun, panelsPerPage: Int) -> [[Layout]] {
+        let bounds = CGRect(x: margin, y: 142, width: contentWidth, height: 1418)
+        let cells = ComicPagination.cells(panelsPerPage: panelsPerPage, in: bounds, gap: 24)
+        return ComicPagination.pages(panelCount: run.panels.count, panelsPerPage: panelsPerPage).map { indices in
+            zip(indices, cells).map { Layout(index: $0.0, rect: $0.1) }
         }
-        if !current.isEmpty { pages.append(current) }
-        return pages
     }
     private func bitmap(_ url: URL) -> UIImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
@@ -188,19 +203,16 @@ actor ComicExporter {
         for item in items {
             autoreleasepool {
                 let panel = run.panels[item.index]
-                var y = item.y
-                _ = drawText(panel.id, x: margin, y: y, width: contentWidth, size: 20, color: .darkGray)
-                y += 30
-                if assets[item.index] == nil, !panel.narration.isEmpty {
-                    y += drawText(panel.narration, x: margin, y: y, width: contentWidth, size: 28) + 12
-                }
-                let rect = CGRect(x: margin, y: y, width: contentWidth, height: item.imageHeight)
+                UIColor(white: 0.83, alpha: 1).setStroke()
+                let border = UIBezierPath(rect: item.rect)
+                border.lineWidth = 1
+                border.stroke()
+                _ = drawText(
+                    panel.id, x: item.rect.minX + 10, y: item.rect.minY + 7, width: item.rect.width - 20,
+                    size: 20, color: .darkGray)
+                let rect = imageBounds(in: item.rect)
                 if let url = assets[item.index], let image = bitmap(url) {
-                    let scale = min(rect.width / image.size.width, rect.height / image.size.height)
-                    let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-                    let imageRect = CGRect(
-                        x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width,
-                        height: size.height)
+                    let imageRect = ComicPagination.aspectFit(imageSize: image.size, in: rect)
                     image.draw(in: imageRect)
                     BubblePainter.draw(
                         LetteringDefaults.layout(for: panel, imageAspect: Double(image.size.width / image.size.height)),
@@ -208,17 +220,37 @@ actor ComicExporter {
                 } else {
                     UIColor(white: 0.95, alpha: 1).setFill()
                     UIRectFill(rect)
+                    let textRect = placeholderRect(in: item.rect)
+                    let text = placeholderText(panel)
+                    var size: CGFloat = 26
+                    // Reader placeholders also retain all text; export separately rejects text too small to read.
+                    while size > 1 && textHeight(text, size: size, width: textRect.width) > textRect.height {
+                        size -= 1
+                    }
                     _ = drawText(
-                        "尚未出图 · \(panel.action)", x: margin + 24, y: y + 24, width: contentWidth - 48, size: 26,
-                        color: .darkGray)
-                }
-                y += item.imageHeight + 12
-                if assets[item.index] == nil {
-                    _ = drawText(caption(panel), x: margin, y: y, width: contentWidth, size: 30)
+                        text, x: textRect.minX, y: textRect.minY, width: textRect.width, size: size, color: .darkGray)
                 }
             }
         }
         _ = drawText("墨序    \(page) / \(total)", x: margin, y: 1610, width: contentWidth, size: 20, color: .gray)
+    }
+    /// The reader uses the same page layout and painter as PDF, PNG and HTML.
+    func pagePreview(
+        project: Project, run: ChapterRun, repository: Repository, pageIndex: Int, panelsPerPage: Int = 4,
+        scale: CGFloat = 0.5
+    ) async throws -> CachedBitmap {
+        let pages = layouts(run: run, panelsPerPage: panelsPerPage)
+        guard pages.indices.contains(pageIndex) else { throw StudioError.invalid("漫画页不存在。") }
+        let items = pages[pageIndex]
+        let assets = try await resolveAssets(project, run, repository, indices: items.map(\.index))
+        try Task.checkCancellation()
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = min(1, max(0.25, scale))
+        format.opaque = true
+        let image = UIGraphicsImageRenderer(size: pageSize, format: format).image { _ in
+            drawPage(items, run: run, project: project, assets: assets, page: pageIndex + 1, total: pages.count)
+        }
+        return CachedBitmap(image)
     }
     private func safeName(_ s: String) -> String {
         let result = s.components(separatedBy: CharacterSet(charactersIn: "/\\:\n\r")).joined(separator: "-")

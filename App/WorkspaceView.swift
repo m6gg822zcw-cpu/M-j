@@ -16,6 +16,8 @@ struct WorkspaceView: View {
     @State private var showSource = false
     @State private var exporting = false
     @State private var share: ShareItem?
+    @AppStorage("comicPanelsPerPage") private var panelsPerPage = 4
+    @State private var showPanelTools = false
     var body: some View {
         Group {
             if let project {
@@ -208,7 +210,19 @@ struct WorkspaceView: View {
     }
     @ViewBuilder private func comicPane(_ p: Project) -> some View {
         if let run, !run.panels.isEmpty {
-            LazyVStack(spacing: 28) { ForEach(run.panels) { panel in PanelCell(project: p, run: run, panel: panel) } }
+            Picker("每页格数", selection: $panelsPerPage) {
+                Text("每页1格").tag(1)
+                Text("每页2格").tag(2)
+                Text("每页4格").tag(4)
+            }.pickerStyle(.segmented)
+            Text("点漫画页放大阅读；PDF、PNG 与 HTML 导出沿用当前每页格数。")
+                .font(.footnote).foregroundStyle(.secondary)
+            DisclosureGroup("逐格编辑、重绘与详情", isExpanded: $showPanelTools) {
+                LazyVStack(spacing: 28) {
+                    ForEach(run.panels) { panel in PanelCell(project: p, run: run, panel: panel) }
+                }.padding(.top, 18)
+            }
+            ComicPagesReader(project: p, run: run, panelsPerPage: panelsPerPage)
         } else {
             EmptyHint(icon: "rectangle.split.2x2", title: "本章还没有分镜", detail: "回到章节页，开始制作这一个章节。")
         }
@@ -219,11 +233,118 @@ struct WorkspaceView: View {
         Task {
             do {
                 let url = try await ComicExporter.shared.export(
-                    kind, project: project, run: run, repository: studio.repository, artist: studio.artist(for: project)
+                    kind, project: project, run: run, repository: studio.repository, artist: studio.artist(for: project),
+                    panelsPerPage: panelsPerPage
                 )
                 share = ShareItem(url: url)
             } catch { studio.report(error) }
             exporting = false
+        }
+    }
+}
+private struct ComicPagesReader: View {
+    let project: Project, run: ChapterRun
+    let panelsPerPage: Int
+    private var pages: [[Int]] {
+        ComicPagination.pages(panelCount: run.panels.count, panelsPerPage: panelsPerPage)
+    }
+    var body: some View {
+        LazyVStack(spacing: 24) {
+            ForEach(pages.indices, id: \.self) { index in
+                ComicPageCell(
+                    project: project, run: run, pageIndex: index, panelIndices: pages[index], total: pages.count,
+                    panelsPerPage: panelsPerPage)
+            }
+        }
+    }
+}
+private struct ComicPageRenderKey: Equatable {
+    let projectID: UUID
+    let projectTitle: String, chapterTitle: String
+    let chapter: Int, pageIndex: Int, total: Int, panelsPerPage: Int, revision: Int
+    let panels: [ComicPanel]
+}
+private struct ComicPageCell: View {
+    @EnvironmentObject private var studio: StudioModel
+    let project: Project, run: ChapterRun
+    let pageIndex: Int, panelIndices: [Int], total: Int, panelsPerPage: Int
+    @State private var bitmap: CachedBitmap?
+    @State private var errorText: String?
+    @State private var showPage = false
+    private var renderKey: ComicPageRenderKey {
+        ComicPageRenderKey(
+            projectID: project.id, projectTitle: project.title, chapterTitle: run.title, chapter: run.ordinal,
+            pageIndex: pageIndex, total: total, panelsPerPage: panelsPerPage, revision: studio.revision,
+            panels: panelIndices.map { run.panels[$0] })
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("第 \(pageIndex + 1) / \(total) 页").font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(panelIndices.map { run.panels[$0].id }.joined(separator: " · "))
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Button { showPage = true } label: {
+                Group {
+                    if let bitmap {
+                        Image(uiImage: bitmap.image).resizable().scaledToFit()
+                    } else {
+                        Rectangle().fill(.white).aspectRatio(1170.0 / 1656.0, contentMode: .fit).overlay {
+                            if let errorText {
+                                Text(errorText).font(.footnote).foregroundStyle(.secondary).padding(20)
+                            } else {
+                                ProgressView("排版中…")
+                            }
+                        }
+                    }
+                }.frame(maxWidth: .infinity).contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityLabel("第\(pageIndex + 1)页，点按放大阅读")
+        }
+        .task(id: renderKey) {
+            bitmap = nil
+            errorText = nil
+            do {
+                let value = try await ComicExporter.shared.pagePreview(
+                    project: project, run: run, repository: studio.repository, pageIndex: pageIndex,
+                    panelsPerPage: panelsPerPage)
+                if !Task.isCancelled { bitmap = value }
+            } catch { if !Task.isCancelled { errorText = error.localizedDescription } }
+        }
+        .sheet(isPresented: $showPage) {
+            ComicPagePreview(project: project, run: run, pageIndex: pageIndex, panelsPerPage: panelsPerPage)
+        }
+        .onDisappear { bitmap = nil }
+    }
+}
+private struct ComicPagePreview: View {
+    @EnvironmentObject private var studio: StudioModel
+    @Environment(\.dismiss) private var dismiss
+    let project: Project, run: ChapterRun
+    let pageIndex: Int, panelsPerPage: Int
+    @State private var bitmap: CachedBitmap?
+    @State private var errorText: String?
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let bitmap {
+                    ZoomImage(image: bitmap.image)
+                } else if let errorText {
+                    Text(errorText).foregroundStyle(.white).padding(24)
+                } else {
+                    ProgressView("读取漫画页…").tint(.white)
+                }
+            }.frame(maxWidth: .infinity, maxHeight: .infinity).background(.black)
+                .navigationTitle("第\(pageIndex + 1)页").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
+                .task {
+                    do {
+                        let value = try await ComicExporter.shared.pagePreview(
+                            project: project, run: run, repository: studio.repository, pageIndex: pageIndex,
+                            panelsPerPage: panelsPerPage, scale: 1)
+                        if !Task.isCancelled { bitmap = value }
+                    } catch { if !Task.isCancelled { errorText = error.localizedDescription } }
+                }
         }
     }
 }
@@ -335,7 +456,9 @@ private struct PanelCell: View {
                         Text(d.text)
                     }.font(.subheadline)
                 }
-                if !panel.sfx.isEmpty { Text("音效 · \(panel.sfx)").font(.caption).foregroundStyle(Ink.teal) }
+                if let sfx = SoundEffects.displayText(panel.sfx) {
+                    Text("音效 · \(sfx)").font(.caption).foregroundStyle(Ink.teal)
+                }
             }
             HStack {
                 Button("查看提示词") { showDetails = true }

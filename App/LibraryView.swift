@@ -5,9 +5,6 @@ import UniformTypeIdentifiers
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
-    private var types: [UTType] {
-        [.plainText, .json, .pdf] + ["md", "epub", "docx", "moxu"].compactMap { UTType(filenameExtension: $0) }
-    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -20,6 +17,11 @@ struct LibraryView: View {
                 BusyButton(title: studio.importing ? "正在读取书稿…" : "导入小说 / 工程", icon: "plus", busy: studio.importing) {
                     importing = true
                 }
+                if let notice = studio.importNotice {
+                    Label(notice, systemImage: "checkmark.circle.fill")
+                        .font(.footnote).foregroundStyle(Ink.teal)
+                        .accessibilityIdentifier("import-success")
+                }
                 Button("离线试用气泡编辑", systemImage: "bubble.left.and.text.bubble.right") {
                     Task { await studio.importLetteringDemo() }
                 }.font(.footnote).disabled(studio.importing)
@@ -31,7 +33,8 @@ struct LibraryView: View {
                         Text("支持 TXT、Markdown、EPUB、DOCX、文字 PDF 和章节 JSON。也能恢复 .moxu 工程。原文只按当前批次发送到你配置的文本服务。").font(
                             .subheadline
                         ).foregroundStyle(.secondary)
-                        Button("试用一份示例书稿（不联网）") { Task { await studio.importSample() } }.buttonStyle(.bordered)
+                        Button("试用一份示例书稿（不联网）") { Task { await studio.importSample() } }
+                            .buttonStyle(.bordered).disabled(studio.importing)
                     }.padding(.vertical, 14)
                 } else {
                     LazyVStack(spacing: 0) {
@@ -57,14 +60,16 @@ struct LibraryView: View {
                         importing = true
                     } label: {
                         Image(systemName: "plus")
-                    }.accessibilityLabel("导入小说")
+                    }.accessibilityLabel("导入小说").disabled(studio.importing)
                 }
             }
-            .fileImporter(isPresented: $importing, allowedContentTypes: types, allowsMultipleSelection: false) {
+            // Some Files providers advertise supported books as public.data rather than their specific type.
+            // Validate the actual extension after selection so those files remain selectable.
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) {
                 result in
                 switch result {
                 case .success(let urls): if let url = urls.first { Task { await studio.importFile(url) } }
-                case .failure(let e): studio.report(e)
+                case .failure(let e): studio.reportImportFailure(e)
                 }
             }
     }

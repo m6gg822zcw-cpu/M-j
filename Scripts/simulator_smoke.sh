@@ -98,4 +98,30 @@ sleep 3
 xcrun simctl io "$device_id" screenshot --type=png "$smoke_dir/launch.png"
 [[ -s "$smoke_dir/launch.png" ]] || fail "未生成启动截图。"
 echo "启动请求及截图检查完成：$smoke_dir/launch.png"
-echo "此检查只证明系统接受启动请求并成功截图，不保证 App 持续无崩溃；未验收气泡手势、保存或导出。"
+echo "执行本地文件导入与 1/2/4 格导出的原生检查，不调用生成服务。"
+container_path="$(xcrun simctl get_app_container "$device_id" "$bundle_id" data)"
+native_dir="$container_path/Documents/NativeSmoke"
+xcrun simctl launch --terminate-running-process "$device_id" "$bundle_id" --moxu-native-smoke \
+  2>&1 | tee "$smoke_dir/native-launch.log"
+for ((attempt = 0; attempt < 90; attempt++)); do
+  if [[ -f "$native_dir/result.json" ]]; then break; fi
+  sleep 1
+done
+if [[ -d "$native_dir" ]]; then
+  rm -rf "$smoke_dir/native"
+  cp -R "$native_dir" "$smoke_dir/native"
+fi
+[[ -f "$smoke_dir/native/result.json" ]] || fail "原生导入/导出检查未在90秒内返回结果。"
+python3 - "$smoke_dir/native/result.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1]) as handle:
+    report = json.load(handle)
+for check in report.get("checks", []):
+    print(check)
+if report.get("success") is not True or len(report.get("checks", [])) < 9:
+    sys.exit("原生导入/导出检查失败：" + str(report.get("error", "检查项不完整")))
+print("原生导入/导出检查通过；实物在 build/smoke/native。")
+PY
+echo "已检查本地导入与导出，不代替第三方云盘授权、气泡手势和真机完整验收。"

@@ -53,9 +53,9 @@ for config in ["Debug","Release"]:
     target_settings = {
         "ASSETCATALOG_COMPILER_APPICON_NAME":"AppIcon",
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME":"AccentColor",
-        "CODE_SIGN_STYLE":"Automatic","CURRENT_PROJECT_VERSION":"3",
+        "CODE_SIGN_STYLE":"Automatic","CURRENT_PROJECT_VERSION":"4",
         "DEVELOPMENT_TEAM":"","GENERATE_INFOPLIST_FILE":"NO",
-        "INFOPLIST_FILE":"App/Info.plist","MARKETING_VERSION":"1.1.1",
+        "INFOPLIST_FILE":"App/Info.plist","MARKETING_VERSION":"1.1.2",
         "PRODUCT_BUNDLE_IDENTIFIER":"com.yourname.moxu","PRODUCT_NAME":"$(TARGET_NAME)",
         "SUPPORTED_PLATFORMS":"iphoneos iphonesimulator","SUPPORTS_MACCATALYST":"NO",
         "TARGETED_DEVICE_FAMILY":"1,2","SWIFT_EMIT_LOC_STRINGS":"YES",

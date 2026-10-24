@@ -166,10 +166,10 @@ public enum LetteringDefaults {
                     frame: BubbleRect(x: x, y: y, width: 0.44, height: h).clamped(), style: style,
                     tailEnabled: style != .caption, tailTip: BubblePoint(x: x + 0.23, y: min(0.97, y + h + 0.08))))
         }
-        if !panel.sfx.isEmpty {
+        if let sfx = SoundEffects.displayText(panel.sfx) {
             bubbles.append(
                 ComicBubble(
-                    id: "sfx", sourceKey: "sfx", text: panel.sfx,
+                    id: "sfx", sourceKey: "sfx", text: sfx,
                     frame: BubbleRect(x: 0.65, y: 0.87, width: 0.30, height: 0.09),
                     style: .caption, fontScale: 0.026, showSpeaker: false, tailEnabled: false))
         }
