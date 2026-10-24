@@ -2,7 +2,7 @@
 
 这是墨序 iOS 原生源码 v1.1.0（build 2），用户要求完成 iOS 编译并生成 IPA。优先使用已有 Mac / macOS CI 与签名环境继续构建、修复和验收。项目入口为 `Moxu.xcodeproj`，scheme 为 `Moxu`，最低 iOS 17，建议 Xcode 16 或更新。
 
-**当前状态（本轮更新）：**Linux Swift 6.0.3 核心编译及 58 项测试通过、原生 Swift 文件语法解析通过、8 项 IPA 校验测试通过。尚未使用真实 iOS SDK 编译、运行或验收 UIKit 气泡渲染，尚无 IPA。不要将这些检查当作 iOS 构建成功。
+**当前状态（已完成云构建）：**Xcode 16.4 下核心 59 项测试、8 项打包检查、iOS 模拟器编译、启动截图和 Release 真机归档均成功，已生成并复核 `Moxu-unsigned.ipa`。此包未签名，需要自己的证书和描述文件签名后安装；详细结果见 [云构建记录](Docs/云构建记录.md)。
 
 ## 最短打包路径
 
@@ -13,7 +13,7 @@
 
 成功后生成 `build/Moxu-unsigned.ipa` 及 SHA-256 校验文件。它是真机目标的未签名包，仍需签名后安装。每次归档使用独立目录，编译失败会停止；不会打包上次残留的 App。
 
-没有 Mac 时，把本目录完整提交到自己的 GitHub 仓库（保留 `.github/workflows/ios.yml`），进入 **Actions → Build iOS and core tests → Run workflow**。也可 push 自动触发。只有成功后才下载 `Moxu-unsigned-requires-signing` artifact；解压后才是 IPA。`Moxu-build-logs` 包含测试、模拟器构建及归档日志，失败时也可下载。此工作流使用 macOS runner，可能消耗账户的 Actions 配额；本轮尚未执行远程工作流。
+没有 Mac 时，把本目录完整提交到自己的 GitHub 仓库（保留 `.github/workflows/ios.yml`），进入 **Actions → Build iOS and core tests → Run workflow**。也可 push 自动触发。只有成功后才下载 `Moxu-unsigned-requires-signing` artifact；解压后才是 IPA。`Moxu-build-logs` 包含测试、模拟器构建及归档日志，失败时也可下载。此工作流使用 macOS runner，可能消耗账户的 Actions 配额；本轮已在用户授权仓库成功运行远程工作流。
 
 如需签名 IPA，先在 Mac 的 Xcode 配置好自己已获授权的 Team、证书、私钥及描述文件，再运行（替换占位值）：
 

@@ -2,7 +2,7 @@
 
 原生 SwiftUI 应用，最低 iOS / iPadOS 17。把导入的小说按章、按批改编为分镜，再使用自己的生图服务绘制画格。
 
-**本包仍是 Xcode 源码工程，尚未生成 IPA。** 本轮在 Linux 用 Swift 6.0.3 重新编译核心并运行 58 项测试全部通过，新增 8 项打包校验测试通过；未进行 iOS SDK 编译、模拟器 / 真机运行和真实收费 API 联调。已补齐签名导出、真机包结构校验、独立归档目录和 CI 失败日志；实际生成 IPA 仍需 Mac / macOS Actions，详见 [构建说明](BUILD_IPA.md) 与 [本轮验证记录](Docs/IPA构建完善记录.md)。
+**已通过真实 Xcode 16.4 构建并生成未签名 IPA，签名后才能安装。** macOS 核心 59 项测试、8 项打包检查、iOS 模拟器编译、启动截图和真机 Release 归档均已通过。构建结果、IPA 下载及已知限制见 [云构建记录](Docs/云构建记录.md)。气泡交互、导出对齐、真机性能和真实 API 的完整验收仍需继续完成。
 
 新版加入出图后的气泡编辑：拖动位置、缩放、尾尖、文字字号、撤销重做和本地保存；阅读与 PDF / PNG / HTML 导出共用同一排版。可先在书架点「离线试用气泡编辑」，无需 API。给 Codex 生成 IPA 请先读 [构建交接](BUILD_IPA.md)。
 
@@ -16,7 +16,7 @@
 
     bash Scripts/build.sh
 
-它会先运行打包校验测试、核心测试，再构建模拟器应用。`Scripts/archive_unsigned.sh` 可在有 Xcode 的 Mac 上生成**需要自行签名**的 `build/Moxu-unsigned.ipa`。具备本机证书和描述文件后，`Scripts/archive_signed.sh` 可导出签名 IPA。附带的 GitHub Actions 工作流提供未签名打包和日志下载；本交付没有替你创建远程仓库或执行云端工作流。
+它会先运行打包校验测试、核心测试，再构建模拟器应用。`Scripts/archive_unsigned.sh` 可在有 Xcode 的 Mac 上生成**需要自行签名**的 `build/Moxu-unsigned.ipa`。具备本机证书和描述文件后，`Scripts/archive_signed.sh` 可导出签名 IPA。附带的 GitHub Actions 工作流提供未签名打包和日志下载；已在你的 GitHub 仓库启用并成功执行云构建，见 [构建结果](https://github.com/m6gg822zcw-cpu/M-j/actions/runs/40105041249)。
 
 ## 第一次使用
 
@@ -83,6 +83,6 @@ iOS 不保证长时间后台运行。进入后台会暂停后续队列，在系�
 | `Packages/MoxuCore/` | 导入解析、人物档案、分镜验证、提示词拼接、API 适配、队列流水线、原子存档 |
 | `Packages/MoxuCore/Tests/` | 不依赖真实服务的核心测试 |
 | `Scripts/` | Mac 构建 / 未签名归档、工程重建、图标与元数据生成 |
-| `.github/workflows/ios.yml` | Mac CI 工作流，交付时尚未执行 |
+| `.github/workflows/ios.yml` | macOS CI：核心测试、模拟器构建与启动截图、真机未签名归档、产物和日志 |
 
 修改原生 Swift 文件列表后可运行 `python3 Scripts/generate_project.py` 更新已提交的 Xcode 工程；正常打开和构建不需要执行它。应用图标已随工程提供，只有重新生成图标或离线定位图时 `make_assets.py` / `make_lettering_demo.py` 才需要 Pillow。
