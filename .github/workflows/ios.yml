@@ -1,0 +1,40 @@
+name: Build iOS and core tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Core tests and simulator build
+        run: bash Scripts/build.sh
+      - name: Archive device app without signing
+        run: bash Scripts/archive_unsigned.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Moxu-unsigned-requires-signing
+          path: |
+            build/Moxu-unsigned.ipa
+            build/Moxu-unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 14
+      - name: Save build logs even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moxu-build-logs
+          path: |
+            build/logs/*.log
+            build/UnsignedArchive/run.*/archive.log
+          if-no-files-found: warn
+          retention-days: 14

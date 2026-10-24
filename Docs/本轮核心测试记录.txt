@@ -1,0 +1,199 @@
+本轮 Linux 核心测试 / Swift 语法解析记录
+日期：2026-10-24T12:05:25.878340+00:00
+仅验证 Linux 核心包和语法；没有 Apple iOS SDK，不能作为 iOS 构建、模拟器或 IPA 成功证据。
+
+Swift version 6.0.3 (swift-6.0.3-RELEASE)
+Target: x86_64-unknown-linux-gnu
+
+命令：swift test --package-path Packages/MoxuCore --scratch-path /workspace/scratch/moxu-core-build --jobs 1 --disable-swift-testing
+Building for debugging...
+[0/13] Write swift-version--4E150E1B99FF9A81.txt
+[1/13] Write sources
+[4/14] Emitting module MoxuCore
+[5/26] Compiling MoxuCore Analysis.swift
+[6/26] Compiling MoxuCore ChapterParser.swift
+[7/26] Compiling MoxuCore DocumentReader.swift
+[8/26] Compiling MoxuCore Lettering.swift
+[9/26] Compiling MoxuCore Models.swift
+[10/26] Compiling MoxuCore Pipeline.swift
+[11/26] Compiling MoxuCore PromptComposer.swift
+[12/26] Compiling MoxuCore PromptTemplates.swift
+[13/26] Compiling MoxuCore ProviderClient.swift
+[14/26] Compiling MoxuCore Repository.swift
+[15/26] Compiling MoxuCore RequestBuilder.swift
+[16/26] Compiling MoxuCore ZIPArchive.swift
+[18/28] Emitting module MoxuCoreTests
+[19/32] Compiling MoxuCoreTests ContinuityTests.swift
+[20/32] Compiling MoxuCoreTests CoreTests.swift
+[21/32] Compiling MoxuCoreTests ImportTests.swift
+[22/32] Compiling MoxuCoreTests LetteringTests.swift
+[23/33] Wrapping AST for MoxuCore for debugging
+[24/33] Wrapping AST for MoxuCoreTests for debugging
+[25/33] /workspace/scratch/moxu-core-build/x86_64-unknown-linux-gnu/debug/MoxuCorePackageDiscoveredTests.derived/all-discovered-tests.swift
+[26/33] Write sources
+[28/34] Emitting module MoxuCorePackageDiscoveredTests
+[29/36] Compiling MoxuCorePackageDiscoveredTests MoxuCoreTests.swift
+[30/36] Compiling MoxuCorePackageDiscoveredTests all-discovered-tests.swift
+[31/37] /workspace/scratch/moxu-core-build/x86_64-unknown-linux-gnu/debug/MoxuCorePackageTests.derived/runner.swift
+[32/37] Wrapping AST for MoxuCorePackageDiscoveredTests for debugging
+[33/37] Write sources
+[35/38] Emitting module MoxuCorePackageTests
+[36/39] Compiling MoxuCorePackageTests runner.swift
+[37/40] Wrapping AST for MoxuCorePackageTests for debugging
+[38/40] Write Objects.LinkFileList
+[39/40] Linking MoxuCorePackageTests.xctest
+Build complete! (25.72s)
+Test Suite 'All tests' started at 2026-10-24 12:05:53.341
+Test Suite 'debug.xctest' started at 2026-10-24 12:05:53.343
+Test Suite 'AnalysisTests' started at 2026-10-24 12:05:53.343
+Test Case 'AnalysisTests.testCoverageFailureRollsBackWholeBatch' started at 2026-10-24 12:05:53.343
+Test Case 'AnalysisTests.testCoverageFailureRollsBackWholeBatch' passed (0.002 seconds)
+Test Case 'AnalysisTests.testLockedIdentityConflictAndActiveContinuity' started at 2026-10-24 12:05:53.345
+Test Case 'AnalysisTests.testLockedIdentityConflictAndActiveContinuity' passed (0.001 seconds)
+Test Case 'AnalysisTests.testNewStageNeedsEvidenceAndDoesNotReplaceOldFace' started at 2026-10-24 12:05:53.345
+Test Case 'AnalysisTests.testNewStageNeedsEvidenceAndDoesNotReplaceOldFace' passed (0.0 seconds)
+Test Case 'AnalysisTests.testNoOmittedUnitsAndNoImaginedPresence' started at 2026-10-24 12:05:53.346
+Test Case 'AnalysisTests.testNoOmittedUnitsAndNoImaginedPresence' passed (0.001 seconds)
+Test Case 'AnalysisTests.testSpeechMustBeInFrame' started at 2026-10-24 12:05:53.347
+Test Case 'AnalysisTests.testSpeechMustBeInFrame' passed (0.0 seconds)
+Test Case 'AnalysisTests.testWardrobeChangesNeedSourceProof' started at 2026-10-24 12:05:53.347
+Test Case 'AnalysisTests.testWardrobeChangesNeedSourceProof' passed (0.001 seconds)
+Test Suite 'AnalysisTests' passed at 2026-10-24 12:05:53.347
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'ChapterTests' started at 2026-10-24 12:05:53.347
+Test Case 'ChapterTests.testEmptyAndInvalidSourcesRejected' started at 2026-10-24 12:05:53.347
+Test Case 'ChapterTests.testEmptyAndInvalidSourcesRejected' passed (0.0 seconds)
+Test Case 'ChapterTests.testFrontMatterAndEnglishHeadings' started at 2026-10-24 12:05:53.348
+Test Case 'ChapterTests.testFrontMatterAndEnglishHeadings' passed (0.003 seconds)
+Test Case 'ChapterTests.testJSONChapterVariants' started at 2026-10-24 12:05:53.350
+Test Case 'ChapterTests.testJSONChapterVariants' passed (0.0 seconds)
+Test Case 'ChapterTests.testRepeatedHeadingsKeepIndependentChapters' started at 2026-10-24 12:05:53.351
+Test Case 'ChapterTests.testRepeatedHeadingsKeepIndependentChapters' passed (0.0 seconds)
+Test Case 'ChapterTests.testUTF16AndBOM' started at 2026-10-24 12:05:53.351
+Test Case 'ChapterTests.testUTF16AndBOM' passed (0.0 seconds)
+Test Case 'ChapterTests.testUnicodeOffsetsAndChunkCoverage' started at 2026-10-24 12:05:53.352
+Test Case 'ChapterTests.testUnicodeOffsetsAndChunkCoverage' passed (0.001 seconds)
+Test Suite 'ChapterTests' passed at 2026-10-24 12:05:53.353
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'ContinuityTests' started at 2026-10-24 12:05:53.353
+Test Case 'ContinuityTests.testPronounAfterEmptyCutawayKeepsRecentLockedIdentity' started at 2026-10-24 12:05:53.353
+Test Case 'ContinuityTests.testPronounAfterEmptyCutawayKeepsRecentLockedIdentity' passed (0.002 seconds)
+Test Suite 'ContinuityTests' passed at 2026-10-24 12:05:53.355
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'ImportTests' started at 2026-10-24 12:05:53.355
+Test Case 'ImportTests.testChatReasoningTokenField' started at 2026-10-24 12:05:53.355
+Test Case 'ImportTests.testChatReasoningTokenField' passed (0.001 seconds)
+Test Case 'ImportTests.testChineseGB18030Decoding' started at 2026-10-24 12:05:53.356
+Test Case 'ImportTests.testChineseGB18030Decoding' passed (0.0 seconds)
+Test Case 'ImportTests.testCustomHeadingRegex' started at 2026-10-24 12:05:53.356
+Test Case 'ImportTests.testCustomHeadingRegex' passed (0.0 seconds)
+Test Case 'ImportTests.testDOCXParagraphsAndXMLText' started at 2026-10-24 12:05:53.356
+Test Case 'ImportTests.testDOCXParagraphsAndXMLText' passed (0.003 seconds)
+Test Case 'ImportTests.testEPUBSpineOrderAndHeadMetadataExcluded' started at 2026-10-24 12:05:53.359
+Test Case 'ImportTests.testEPUBSpineOrderAndHeadMetadataExcluded' passed (0.001 seconds)
+Test Case 'ImportTests.testNAIAuditHidesSmallBase64Images' started at 2026-10-24 12:05:53.361
+Test Case 'ImportTests.testNAIAuditHidesSmallBase64Images' passed (0.003 seconds)
+Test Case 'ImportTests.testResponsesNativeInputAndOutput' started at 2026-10-24 12:05:53.364
+Test Case 'ImportTests.testResponsesNativeInputAndOutput' passed (0.001 seconds)
+Test Suite 'ImportTests' passed at 2026-10-24 12:05:53.365
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.01 (0.01) seconds
+Test Suite 'LetteringGeometryTests' started at 2026-10-24 12:05:53.365
+Test Case 'LetteringGeometryTests.testBadCoordinatesCannotEscapeCanvasOrCreateNaN' started at 2026-10-24 12:05:53.365
+Test Case 'LetteringGeometryTests.testBadCoordinatesCannotEscapeCanvasOrCreateNaN' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testDefaultsKeepEverySourceAndStableIDs' started at 2026-10-24 12:05:53.365
+Test Case 'LetteringGeometryTests.testDefaultsKeepEverySourceAndStableIDs' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testDraggingBodyKeepsTailAtSpeakersMouth' started at 2026-10-24 12:05:53.366
+Test Case 'LetteringGeometryTests.testDraggingBodyKeepsTailAtSpeakersMouth' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testDuplicateIDsAndUnsupportedLayerRejected' started at 2026-10-24 12:05:53.366
+Test Case 'LetteringGeometryTests.testDuplicateIDsAndUnsupportedLayerRejected' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testHitTestingUsesTopmostVisibleBubble' started at 2026-10-24 12:05:53.366
+Test Case 'LetteringGeometryTests.testHitTestingUsesTopmostVisibleBubble' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testLetteringChangeDoesNotInvalidateImagePrompt' started at 2026-10-24 12:05:53.366
+Test Case 'LetteringGeometryTests.testLetteringChangeDoesNotInvalidateImagePrompt' passed (0.001 seconds)
+Test Case 'LetteringGeometryTests.testRepeatedCornerResizesHaveNoInvalidClosedRange' started at 2026-10-24 12:05:53.367
+Test Case 'LetteringGeometryTests.testRepeatedCornerResizesHaveNoInvalidClosedRange' passed (0.001 seconds)
+Test Case 'LetteringGeometryTests.testResizeDoesNotMoveTopLeftAndStaysInBounds' started at 2026-10-24 12:05:53.368
+Test Case 'LetteringGeometryTests.testResizeDoesNotMoveTopLeftAndStaysInBounds' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testRoundtripKeepsManualTextSizeTailOrderAndHiddenFlag' started at 2026-10-24 12:05:53.368
+Test Case 'LetteringGeometryTests.testRoundtripKeepsManualTextSizeTailOrderAndHiddenFlag' passed (0.001 seconds)
+Test Case 'LetteringGeometryTests.testSavedEmptyLayerIntentionallySuppressesOriginalBubbles' started at 2026-10-24 12:05:53.369
+Test Case 'LetteringGeometryTests.testSavedEmptyLayerIntentionallySuppressesOriginalBubbles' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testTailChoosesCorrectEdgeAndDisappearsInsideBody' started at 2026-10-24 12:05:53.369
+Test Case 'LetteringGeometryTests.testTailChoosesCorrectEdgeAndDisappearsInsideBody' passed (0.0 seconds)
+Test Case 'LetteringGeometryTests.testV10PanelWithoutLetteringDecodes' started at 2026-10-24 12:05:53.369
+Test Case 'LetteringGeometryTests.testV10PanelWithoutLetteringDecodes' passed (0.001 seconds)
+Test Suite 'LetteringGeometryTests' passed at 2026-10-24 12:05:53.370
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'LetteringPersistenceTests' started at 2026-10-24 12:05:53.370
+Test Case 'LetteringPersistenceTests.testBackupRestoresManualLayerIncludingIntentionallyEmptyLayout' started at 2026-10-24 12:05:53.370
+Test Case 'LetteringPersistenceTests.testBackupRestoresManualLayerIncludingIntentionallyEmptyLayout' passed (0.007 seconds)
+Test Case 'LetteringPersistenceTests.testBundledOfflineDemoCanRestoreWithoutAPIs' started at 2026-10-24 12:05:53.377
+Test Case 'LetteringPersistenceTests.testBundledOfflineDemoCanRestoreWithoutAPIs' passed (0.002 seconds)
+Test Case 'LetteringPersistenceTests.testConcurrentLetteringSaveRejectsStaleEditor' started at 2026-10-24 12:05:53.380
+Test Case 'LetteringPersistenceTests.testConcurrentLetteringSaveRejectsStaleEditor' passed (0.003 seconds)
+Test Case 'LetteringPersistenceTests.testPipelineCheckpointCannotEraseManualLayout' started at 2026-10-24 12:05:53.383
+Test Case 'LetteringPersistenceTests.testPipelineCheckpointCannotEraseManualLayout' passed (0.004 seconds)
+Test Case 'LetteringPersistenceTests.testRedrawnImageRejectsOldCoordinatesSave' started at 2026-10-24 12:05:53.386
+Test Case 'LetteringPersistenceTests.testRedrawnImageRejectsOldCoordinatesSave' passed (0.002 seconds)
+Test Case 'LetteringPersistenceTests.testSavePreservesRawImageScriptReviewAndReceipt' started at 2026-10-24 12:05:53.389
+Test Case 'LetteringPersistenceTests.testSavePreservesRawImageScriptReviewAndReceipt' passed (0.003 seconds)
+Test Suite 'LetteringPersistenceTests' passed at 2026-10-24 12:05:53.392
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.022 (0.022) seconds
+Test Suite 'PersistenceAndPipelineTests' started at 2026-10-24 12:05:53.392
+Test Case 'PersistenceAndPipelineTests.testBackupRestoresSourceAndArtistWithoutAPISecrets' started at 2026-10-24 12:05:53.392
+Test Case 'PersistenceAndPipelineTests.testBackupRestoresSourceAndArtistWithoutAPISecrets' passed (0.003 seconds)
+Test Case 'PersistenceAndPipelineTests.testPaidImageSavedBeforeNormalizationFailure' started at 2026-10-24 12:05:53.395
+Test Case 'PersistenceAndPipelineTests.testPaidImageSavedBeforeNormalizationFailure' passed (0.006 seconds)
+Test Case 'PersistenceAndPipelineTests.testPastMemoryNeverReadsFutureAndJournalRecovers' started at 2026-10-24 12:05:53.401
+Test Case 'PersistenceAndPipelineTests.testPastMemoryNeverReadsFutureAndJournalRecovers' passed (0.004 seconds)
+Test Case 'PersistenceAndPipelineTests.testPathTraversalRejected' started at 2026-10-24 12:05:53.405
+Test Case 'PersistenceAndPipelineTests.testPathTraversalRejected' passed (0.001 seconds)
+Test Case 'PersistenceAndPipelineTests.testSavedReceiptRecoversWithoutTextAPIOrImageCharge' started at 2026-10-24 12:05:53.406
+Test Case 'PersistenceAndPipelineTests.testSavedReceiptRecoversWithoutTextAPIOrImageCharge' passed (0.006 seconds)
+Test Case 'PersistenceAndPipelineTests.testUnknownImageRequestDoesNotAutomaticallyChargeAgain' started at 2026-10-24 12:05:53.412
+Test Case 'PersistenceAndPipelineTests.testUnknownImageRequestDoesNotAutomaticallyChargeAgain' passed (0.002 seconds)
+Test Suite 'PersistenceAndPipelineTests' passed at 2026-10-24 12:05:53.414
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.022 (0.022) seconds
+Test Suite 'PromptTests' started at 2026-10-24 12:05:53.414
+Test Case 'PromptTests.testArtistStringsPreservedAndClothesRemoved' started at 2026-10-24 12:05:53.414
+Test Case 'PromptTests.testArtistStringsPreservedAndClothesRemoved' passed (0.001 seconds)
+Test Case 'PromptTests.testFingerprintChangesWithReferenceAndLockedFace' started at 2026-10-24 12:05:53.415
+Test Case 'PromptTests.testFingerprintChangesWithReferenceAndLockedFace' passed (0.001 seconds)
+Test Case 'PromptTests.testProfileDictionaryOrderingIsStable' started at 2026-10-24 12:05:53.417
+Test Case 'PromptTests.testProfileDictionaryOrderingIsStable' passed (0.002 seconds)
+Test Suite 'PromptTests' passed at 2026-10-24 12:05:53.418
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.005 (0.005) seconds
+Test Suite 'RequestTests' started at 2026-10-24 12:05:53.418
+Test Case 'RequestTests.testEndpointRequiresDeliberateHTTPAndNoInlineSecrets' started at 2026-10-24 12:05:53.418
+Test Case 'RequestTests.testEndpointRequiresDeliberateHTTPAndNoInlineSecrets' passed (0.0 seconds)
+Test Case 'RequestTests.testFullAndRootEndpointsDoNotDoubleAppend' started at 2026-10-24 12:05:53.419
+Test Case 'RequestTests.testFullAndRootEndpointsDoNotDoubleAppend' passed (0.0 seconds)
+Test Case 'RequestTests.testGeminiNativeAndAnthropicHeaders' started at 2026-10-24 12:05:53.419
+Test Case 'RequestTests.testGeminiNativeAndAnthropicHeaders' passed (0.001 seconds)
+Test Case 'RequestTests.testImageEditUsesMultipartAndDedicatedEndpoint' started at 2026-10-24 12:05:53.420
+Test Case 'RequestTests.testImageEditUsesMultipartAndDedicatedEndpoint' passed (0.001 seconds)
+Test Case 'RequestTests.testNAICharacterCaptionsAndVerbatimArtist' started at 2026-10-24 12:05:53.422
+Test Case 'RequestTests.testNAICharacterCaptionsAndVerbatimArtist' passed (0.002 seconds)
+Test Case 'RequestTests.testNAIReferenceLimitAndExperimentalGuard' started at 2026-10-24 12:05:53.424
+Test Case 'RequestTests.testNAIReferenceLimitAndExperimentalGuard' passed (0.001 seconds)
+Test Case 'RequestTests.testProtectedAdvancedFieldsRejected' started at 2026-10-24 12:05:53.425
+Test Case 'RequestTests.testProtectedAdvancedFieldsRejected' passed (0.001 seconds)
+Test Suite 'RequestTests' passed at 2026-10-24 12:05:53.426
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.007 (0.007) seconds
+Test Suite 'ZIPAndClientTests' started at 2026-10-24 12:05:53.426
+Test Case 'ZIPAndClientTests.testCompressedZIPFixture' started at 2026-10-24 12:05:53.426
+Test Case 'ZIPAndClientTests.testCompressedZIPFixture' passed (0.0 seconds)
+Test Case 'ZIPAndClientTests.testEmptyImageAndHTTPFailure' started at 2026-10-24 12:05:53.426
+Test Case 'ZIPAndClientTests.testEmptyImageAndHTTPFailure' passed (0.0 seconds)
+Test Case 'ZIPAndClientTests.testStoredZIPRoundtripAndCRCValidation' started at 2026-10-24 12:05:53.427
+Test Case 'ZIPAndClientTests.testStoredZIPRoundtripAndCRCValidation' passed (0.0 seconds)
+Test Case 'ZIPAndClientTests.testTextResponseProtocolsAndPublicImageDownloadWithoutKey' started at 2026-10-24 12:05:53.427
+Test Case 'ZIPAndClientTests.testTextResponseProtocolsAndPublicImageDownloadWithoutKey' passed (0.001 seconds)
+Test Suite 'ZIPAndClientTests' passed at 2026-10-24 12:05:53.428
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'debug.xctest' passed at 2026-10-24 12:05:53.428
+	 Executed 58 tests, with 0 failures (0 unexpected) in 0.084 (0.084) seconds
+Test Suite 'All tests' passed at 2026-10-24 12:05:53.428
+	 Executed 58 tests, with 0 failures (0 unexpected) in 0.084 (0.084) seconds
+
+核心测试退出码：0

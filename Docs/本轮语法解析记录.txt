@@ -1,0 +1,4 @@
+仅 Swift frontend parse；不解析或链接 SwiftUI / UIKit / iOS SDK。
+命令：swiftc -frontend -parse App/ArtistsView.swift App/AssetProcessor.swift App/BubbleCanvas.swift App/BubbleEditor.swift App/CharacterEditor.swift App/ComicExporter.swift App/Components.swift App/ConnectionsView.swift App/LibraryView.swift App/MoxuApp.swift App/QueueView.swift App/SecureVault.swift App/StudioModel.swift App/WorkspaceView.swift
+
+退出码：0

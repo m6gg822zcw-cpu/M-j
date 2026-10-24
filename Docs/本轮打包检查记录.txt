@@ -1,0 +1,61 @@
+本轮打包工具检查（Linux，不含 iOS 编译）
+日期：2026-10-24
+
+$ python3 -m unittest discover -s Scripts/tests -v
+
+test_accept_device_structure (test_validate_ipa.IPAValidationTests.test_accept_device_structure) ... ok
+test_reject_arm64_simulator_binary_even_with_device_plist (test_validate_ipa.IPAValidationTests.test_reject_arm64_simulator_binary_even_with_device_plist) ... ok
+test_reject_non_arm64_and_empty_binary (test_validate_ipa.IPAValidationTests.test_reject_non_arm64_and_empty_binary) ... ok
+test_reject_simulator_plist (test_validate_ipa.IPAValidationTests.test_reject_simulator_plist) ... ok
+test_reject_source_zip (test_validate_ipa.IPAValidationTests.test_reject_source_zip) ... ok
+test_reject_truncated_load_commands (test_validate_ipa.IPAValidationTests.test_reject_truncated_load_commands) ... ok
+test_reject_wrong_platform_in_universal_binary (test_validate_ipa.IPAValidationTests.test_reject_wrong_platform_in_universal_binary) ... ok
+test_signing_mode_cannot_be_mislabeled (test_validate_ipa.IPAValidationTests.test_signing_mode_cannot_be_mislabeled) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.011s
+
+OK
+
+退出码：0
+
+$ bash -n Scripts/build.sh
+
+退出码：0
+
+$ bash -n Scripts/archive_unsigned.sh
+
+退出码：0
+
+$ bash -n Scripts/archive_signed.sh
+
+退出码：0
+
+$ bash Scripts/build.sh
+
+需要安装 Xcode 的 Mac；本脚本不能在 Linux 或 iPhone 上编译 iOS 应用。
+
+退出码：1（Linux缺少Xcode，预期拒绝）
+
+$ bash Scripts/archive_unsigned.sh
+
+需要装有完整 Xcode 和 iOS SDK 的 Mac；尚未生成 IPA。
+
+退出码：1（Linux缺少Xcode，预期拒绝）
+
+$ bash Scripts/archive_signed.sh
+
+错误：签名 IPA 需要装有完整 Xcode 的 Mac。
+
+退出码：1（Linux缺少Xcode，预期拒绝）
+
+App/Info.plist XML plist解析通过
+App/PrivacyInfo.xcprivacy XML plist解析通过
+所有Asset Catalog Contents.json解析通过
+GitHub Actions YAML解析与入口检查通过（未执行工作流）
+
+签名配置生成烟测（只执行配置生成 Python，无 Xcode、无签名构建）：
+release-testing / automatic 配置生成通过；destination=export、uploadSymbols=false
+debugging / manual 配置生成通过；destination=export、uploadSymbols=false
+自定义 destination=upload 被拒绝
+手动归档与 automatic 自定义导出配置冲突被拒绝
