@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(CoreGraphics)
+    import CoreGraphics
+#endif
+
 /// Local page composition. Panel indices always keep their original storyboard order.
 public enum ComicPagination {
     public static let supportedPanelsPerPage = [1, 2, 4]
