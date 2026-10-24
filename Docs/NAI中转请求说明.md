@@ -39,4 +39,21 @@ NAI 模式下人物参考沿用 NAI 的单人物／V4.5 精确参考限制，不
 
 旧画师、旧 Settings 及 `.moxu` 中没有新字段时，默认跟随连接。修改格式不会改写原小说、原图、对白或气泡，也不会自动重新请求收费图片；旧图通过指纹提示待更新。
 
-新增 10 项协议及兼容测试、3 项完整流水线测试。Linux Swift 6.0.3 全部 72 项核心测试通过，包含 NAI 生图及定妆图的完整中转地址、参考规则、恢复不重复请求、原串与返回格式。真实收费服务未调用；更新版 iOS 编译与归档结果待云构建补充。
+新增 10 项协议及兼容测试、3 项完整流水线测试。Linux Swift 6.0.3 与 macOS Xcode 16.4 全部 72 项核心测试通过，包含 NAI 生图及定妆图的完整中转地址、参考规则、恢复不重复请求、原串与返回格式。真实收费服务未调用；更新版 iOS 编译与归档结果见下。
+
+## 更新版构建结果
+
+2026-10-24，[GitHub macOS 构建](https://github.com/m6gg822zcw-cpu/M-j/actions/runs/40108171952) 已成功。测试代码提交 `16af250b6c191fce63594b7cb95a97bf8b148610`，后续文档更新不改变编译代码。
+
+- Xcode 16.4 / iOS SDK 18.5：72 项核心测试及 8 项打包校验通过。
+- iOS 模拟器 Debug 编译通过，临时 iPhone Air / iOS 26.2 安装、启动并截图；已查看书架首页截图。
+- iPhoneOS arm64 Release 归档通过；NAI 选择器、连接参数控件及预览已通过真实 iOS SDK 类型检查。
+- IPA 结构、下载 artifact digest 和 IPA 自带 SHA-256 校验均通过，版本 1.1.1，build 3。
+
+[下载 IPA artifact](https://github.com/m6gg822zcw-cpu/M-j/actions/runs/40108171952/artifacts/12566110326)。解压后获得 `Moxu-unsigned.ipa`。文件为 886036 字节，SHA-256：
+
+    9a1f7854d084e560100c483de6deb2e24e5442eabb1b3f461871df6343ba766c
+
+**此 IPA 未签名，需要使用自己的有效签名配置重新签名后才能安装。** 当前仍是工程默认 Bundle ID `com.yourname.moxu`。未上传 App Store 或 TestFlight。GitHub 产物按当前保留策略有效至 2026-11-07，可重新运行工作流生成新包。
+
+本轮模拟请求验证了客户端发包与响应解析，未实际调用你的中转。服务端必须接受 NAI JSON；只接受 OpenAI 请求格式的服务请选「跟随连接」。启动截图不代替气泡完整手工验收、真实中转联调或真机性能检查。
