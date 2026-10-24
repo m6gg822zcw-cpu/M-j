@@ -208,7 +208,7 @@ actor ComicExporter {
                 border.lineWidth = 1
                 border.stroke()
                 _ = drawText(
-                    panel.id, x: item.rect.minX + 10, y: item.rect.minY + 7, width: item.rect.width - 20,
+                    "第 \(item.index + 1) 格", x: item.rect.minX + 10, y: item.rect.minY + 7, width: item.rect.width - 20,
                     size: 20, color: .darkGray)
                 let rect = imageBounds(in: item.rect)
                 if let url = assets[item.index], let image = bitmap(url) {
