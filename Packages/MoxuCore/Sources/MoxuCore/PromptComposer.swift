@@ -68,7 +68,8 @@ public enum PromptComposer {
             ? join([artist.positive, sceneTags], delimiter: ", ") : join([sceneTags, artist.positive], delimiter: ", ")
         let references = panel.cast.compactMap { id in project.characters.first(where: { $0.id == id.characterID }) }
             .map { "\($0.id)/\($0.revision)/\($0.referenceFile ?? "")" }.joined(separator: "|")
-        let profileData = String(data: try Codec.encode(profile), encoding: .utf8)!
+        let effectiveProfile = try RequestBuilder.imageProfile(profile: profile, artist: artist)
+        let profileData = String(data: try Codec.encode(effectiveProfile), encoding: .utf8)!
         let signature = StableID.digest(
             natural + base + artist.negative + chars.map(\.prompt).joined() + references + profileData)
         return ComposedPrompt(

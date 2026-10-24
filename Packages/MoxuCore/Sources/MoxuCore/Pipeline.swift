@@ -82,7 +82,8 @@ public actor Pipeline {
                 return
             }
         }
-        guard let imageProfile = config.image else { throw StudioError.invalid("分镜已保存，先在连接页选择生图 API。") }
+        guard let configuredImage = config.image else { throw StudioError.invalid("分镜已保存，先在连接页选择生图 API。") }
+        let imageProfile = try RequestBuilder.imageProfile(profile: configuredImage, artist: config.artist)
         let recovered = try await recoverReceipt(
             job, config: config, project: &project, run: &run, imageProfile: imageProfile)
         if let id = job.referenceCharacterID {

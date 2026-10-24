@@ -423,10 +423,12 @@ private struct PanelDetails: View {
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
                 .task {
                     if let api = studio.profile(studio.settings.imageProfileID, text: false),
+                        let effective = try? RequestBuilder.imageProfile(
+                            profile: api, artist: studio.artist(for: project)),
                         let q = try? PromptComposer.compose(
-                            panel: panel, project: project, artist: studio.artist(for: project), profile: api)
+                            panel: panel, project: project, artist: studio.artist(for: project), profile: effective)
                     {
-                        if api.kind == .novelAI {
+                        if effective.kind == .novelAI {
                             preview =
                                 q.naiBase + "\n\n"
                                 + q.characters.enumerated().map { "角色\($0.offset+1)：\($0.element.prompt)" }.joined(

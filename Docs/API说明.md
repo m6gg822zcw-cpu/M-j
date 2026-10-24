@@ -67,3 +67,9 @@ NAI 英文信息分为：
 - [NovelAI 精确参考](https://docs.novelai.net/en/image/precisereference/)
 - [NovelAI 权重语法](https://docs.novelai.net/en/image/strengthening-weakening/)
 - [NovelAI 图像接口文档](https://image.novelai.net/docs/index.html)
+
+## 画师方案覆盖 NAI 请求格式
+
+v1.1.1 的画师方案可选择 NAI，请求体格式与连接路由分别确定。连接仍可为 OpenAI 兼容生图，读取其 `/models`；选用 NAI 画师时生图使用 NAI JSON 和 Bearer 认证，完整图片接口原样使用，根地址则按原连接类型拼接默认图片端点。漫画和定妆图共用该规则，参考图处理也采用 NAI 限制。
+
+支持 NAI ZIP、原始 PNG/JPEG/WebP，以及中转的 OpenAI `data[].b64_json` / `data[].url` 响应。图片 URL 下载不会附带生成接口的密钥。该兼容不包含平台私有签名、异步轮询协议或任意额外响应结构。详细例子见 [NAI中转请求说明](NAI中转请求说明.md)。

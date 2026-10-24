@@ -158,7 +158,7 @@ struct APIProfileEditor: View {
                     .secondary)
             } footer: {
                 Text(
-                    "用于平台支持的 quality、output_format、reasoning 等扩展字段。不允许覆盖模型、提示词、参考图与密钥。NAI 扩展写在 parameters 内；其他平台写在请求顶层。"
+                    "用于平台支持的 quality、output_format、reasoning 等扩展字段。使用 NAI 连接或 NAI 画师方案时写入 parameters；其他格式写入请求顶层。不可覆盖模型、提示词、参考图与密钥。"
                 )
             }
         }
@@ -180,6 +180,13 @@ struct APIProfileEditor: View {
         .sheet(isPresented: $showAdvanced) {
             SheetTextEditor(title: "高级请求参数", detail: "输入一个 JSON 对象。留空参数使用 {}。不要在这里填写密钥。", text: $profile.extraJSON)
         }
+    }
+    private var defaultArtist: ArtistPreset {
+        studio.settings.artists.first(where: { $0.id == profile.artistPresetID })
+            ?? studio.settings.artists.first ?? ArtistPreset()
+    }
+    private var usesNovelAI: Bool {
+        profile.kind == .novelAI || (!profile.kind.isText && defaultArtist.imageRequestFormat == .novelAI)
     }
     @ViewBuilder private var textSettings: some View {
         Section("文本生成") {
@@ -205,13 +212,20 @@ struct APIProfileEditor: View {
         }
     }
     @ViewBuilder private var imageSettings: some View {
-        Section("独立画师方案") {
+        Section {
             Picker("默认画师串", selection: $profile.artistPresetID) {
                 Text("使用首个方案").tag(Optional<UUID>.none)
-                ForEach(studio.settings.artists) { a in Text(a.name).tag(Optional(a.id)) }
+                ForEach(studio.settings.artists) { a in
+                    Text(a.imageRequestFormat == .novelAI ? "\(a.name) · NAI" : a.name).tag(Optional(a.id))
+                }
             }
+            LabeledContent("生图请求格式", value: usesNovelAI ? "NAI" : profile.kind.title)
+        } header: {
+            Text("独立画师方案")
+        } footer: {
+            Text("参数按默认画师的请求格式显示；作品单独指定画师时，按该作品的画师方案生效。")
         }
-        if profile.kind != .geminiImage {
+        if profile.kind != .geminiImage || usesNovelAI {
             Section("画幅") {
                 HStack {
                     Text("宽")
@@ -233,7 +247,7 @@ struct APIProfileEditor: View {
                     Spacer()
                     Button("竖页") {
                         profile.width = 1024
-                        profile.height = profile.kind == .novelAI ? 1536 : 1536
+                        profile.height = 1536
                     }
                     Spacer()
                     Button("横幅") {
@@ -243,7 +257,7 @@ struct APIProfileEditor: View {
                 }
             }
         }
-        if profile.kind == .novelAI {
+        if usesNovelAI {
             naiSettings
         } else {
             Section {
@@ -311,15 +325,18 @@ struct APIProfileEditor: View {
             throw StudioError.invalid("请填写名称与模型 ID。")
         }
         _ = try RequestBuilder.endpoint(profile, suffix: "models")
+        let imageProfile =
+            profile.kind.isText ? profile : try RequestBuilder.imageProfile(profile: profile, artist: defaultArtist)
         guard let data = profile.extraJSON.data(using: .utf8),
             (try JSONSerialization.jsonObject(with: data)) is [String: Any]
         else { throw StudioError.invalid("高级参数必须为 JSON 对象。") }
-        if !profile.editURL.isEmpty {
+        if imageProfile.kind != .novelAI, !profile.editURL.isEmpty {
             _ = try RequestBuilder.endpoint(profile, suffix: "images/edits", override: profile.editURL)
         }
-        if profile.kind == .novelAI {
-            guard profile.width % 64 == 0, profile.height % 64 == 0, profile.width >= 64, profile.height >= 64,
-                profile.width <= 2048, profile.height <= 2048
+        if imageProfile.kind == .novelAI {
+            guard imageProfile.width % 64 == 0, imageProfile.height % 64 == 0,
+                imageProfile.width >= 64, imageProfile.height >= 64,
+                imageProfile.width <= 2048, imageProfile.height <= 2048
             else { throw StudioError.invalid("NAI 宽高须为64的倍数，且在64—2048之间。") }
         }
     }

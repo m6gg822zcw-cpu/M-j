@@ -33,6 +33,31 @@ public struct PreparedRequest: Sendable {
     }
 }
 public enum RequestBuilder {
+    public static func imageProfile(profile: APIProfile, artist: ArtistPreset) throws -> APIProfile {
+        guard artist.imageRequestFormat == .novelAI else { return profile }
+        guard profile.kind == .novelAI || profile.kind == .openAIImage else {
+            throw StudioError.invalid("NAI 请求格式只支持 NovelAI 或 OpenAI 兼容生图连接。")
+        }
+        let url: URL
+        if let override = profile.imageEndpointOverride, !override.isEmpty {
+            url = try endpoint(profile, suffix: "", override: override)
+        } else {
+            let base = try endpoint(profile, suffix: "", override: profile.baseURL)
+            var path = base.path
+            while path.hasSuffix("/") { path.removeLast() }
+            let imageEndpoints = ["/images/generations", "/images/edits", "/ai/generate-image"]
+            if imageEndpoints.contains(where: { path.hasSuffix($0) }) {
+                url = base
+            } else {
+                let suffix = profile.kind == .openAIImage ? "images/generations" : "ai/generate-image"
+                url = try endpoint(profile, suffix: suffix)
+            }
+        }
+        var resolved = profile
+        resolved.kind = .novelAI
+        resolved.imageEndpointOverride = url.absoluteString
+        return resolved
+    }
     public static func endpoint(_ profile: APIProfile, suffix: String, override: String? = nil) throws -> URL {
         let base = (override?.isEmpty == false ? override! : profile.baseURL).trimmingCharacters(
             in: .whitespacesAndNewlines)
@@ -253,7 +278,7 @@ public enum RequestBuilder {
             return try jsonRequest(
                 p, suffix: "ai/generate-image",
                 payload: ["input": prompt.naiBase, "model": p.model, "action": action, "parameters": params],
-                token: token)
+                token: token, override: p.imageEndpointOverride)
         case .openAIImage:
             var payload: [String: Any] = [
                 "model": p.model, "prompt": prompt.natural, "n": 1, "size": "\(p.width)x\(p.height)",

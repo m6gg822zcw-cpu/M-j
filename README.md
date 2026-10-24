@@ -1,8 +1,8 @@
-# 墨序 · iOS 小说漫画工作室 v1.1.0
+# 墨序 · iOS 小说漫画工作室 v1.1.1
 
 原生 SwiftUI 应用，最低 iOS / iPadOS 17。把导入的小说按章、按批改编为分镜，再使用自己的生图服务绘制画格。
 
-**已通过真实 Xcode 16.4 构建并生成未签名 IPA，签名后才能安装。** macOS 核心 59 项测试、8 项打包检查、iOS 模拟器编译、启动截图和真机 Release 归档均已通过。构建结果、IPA 下载及已知限制见 [云构建记录](Docs/云构建记录.md)。气泡交互、导出对齐、真机性能和真实 API 的完整验收仍需继续完成。
+**v1.1.1 新增画师方案选择 NAI 请求格式，更新版 IPA 正在云构建验证。** Linux 72 项核心测试已通过；上一版 v1.1.0 已完成 Xcode 编译、模拟器启动和未签名 IPA 归档，历史结果见 [云构建记录](Docs/云构建记录.md)。新功能使用方法见下方 NAI 中转说明。
 
 新版加入出图后的气泡编辑：拖动位置、缩放、尾尖、文字字号、撤销重做和本地保存；阅读与 PDF / PNG / HTML 导出共用同一排版。可先在书架点「离线试用气泡编辑」，无需 API。给 Codex 生成 IPA 请先读 [构建交接](BUILD_IPA.md)。
 
@@ -17,6 +17,16 @@
     bash Scripts/build.sh
 
 它会先运行打包校验测试、核心测试，再构建模拟器应用。`Scripts/archive_unsigned.sh` 可在有 Xcode 的 Mac 上生成**需要自行签名**的 `build/Moxu-unsigned.ipa`。具备本机证书和描述文件后，`Scripts/archive_signed.sh` 可导出签名 IPA。附带的 GitHub Actions 工作流提供未签名打包和日志下载；已在你的 GitHub 仓库启用并成功执行云构建，见 [构建结果](https://github.com/m6gg822zcw-cpu/M-j/actions/runs/40105041249)。
+
+## NAI 中转请求格式（v1.1.1）
+
+在「画师串 → 编辑 → 生图请求格式」选择 **NAI**，并将该画师方案设为生图连接默认方案或作品的画师方案。漫画、人物定妆图和提示词预览都会采用 NAI 格式。旧方案默认「跟随连接」，仍使用原来的请求格式。
+
+例如中转提供 `https://relay.example.com/v1/images/generations`：连接类型可以保留「OpenAI 兼容生图」，填写这个完整图片接口、平台的 NAI 模型 ID 和密钥，再选择 NAI 画师方案。请求会在这个地址发送 NAI 的 `input / model / action / parameters`，不会因路径像 OpenAI 就改发 `prompt / size`，也不会将完整地址替换为 `/ai/generate-image`。只填根地址时，OpenAI 连接沿用 `/images/generations` 路径，NovelAI 连接沿用 `/ai/generate-image`。
+
+连接页会显示 NAI 的步数、CFG、采样器、种子和参考方式；作品单独指定的画师优先。四组原始画师串保留空白、换行与权重；切换请求格式会将旧图标为待更新，不自动重新生成。NAI 格式选择适用于 NovelAI 或 OpenAI 兼容生图连接，Gemini 连接请继续跟随其原格式。中转必须实际接受 NAI 请求体；仅把 NAI 模型包装成 OpenAI 协议的平台应选「跟随连接」。
+
+本轮新增请求、旧配置兼容、返回格式与流水线测试，Linux **72 项核心测试通过**；真实服务未调用，更新版 iOS 云构建正在验证。使用细节见 [NAI中转说明](Docs/NAI中转请求说明.md)。
 
 ## 第一次使用
 

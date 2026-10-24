@@ -45,6 +45,7 @@ public struct APIProfile: Codable, Identifiable, Equatable, Sendable {
     public var baseURL = "https://api.openai.com/v1"
     public var model = ""
     public var editURL = ""
+    public var imageEndpointOverride: String? = nil
     public var artistPresetID: UUID? = nil
     public var width = 1024, height = 1024, steps = 28
     public var guidance = 5.0
@@ -65,12 +66,14 @@ public struct APIProfile: Codable, Identifiable, Equatable, Sendable {
     public enum ReferenceMode: String, Codable, CaseIterable, Sendable { case off, precise, imageToImage }
 }
 public enum ArtistPlacement: String, Codable, CaseIterable, Sendable { case afterFacts, beforeFacts }
+public enum ArtistImageRequestFormat: String, Codable, CaseIterable, Sendable { case connection, novelAI }
 public struct ArtistPreset: Codable, Identifiable, Equatable, Sendable {
     public var id = UUID()
     public var name = "我的画师串"
     public var positive = "", negative = "", character = "", background = ""
     public var guidance = "清晰的漫画线条，统一的上色、材质与人物比例。"
     public var placement: ArtistPlacement = .afterFacts
+    public var imageRequestFormat: ArtistImageRequestFormat? = nil
     public var revision = 1
     public init() {}
 }

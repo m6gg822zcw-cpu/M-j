@@ -16,6 +16,11 @@ struct ArtistsView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
                                     Text(preset.name).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+                                    if preset.imageRequestFormat == .novelAI {
+                                        Text("NAI").font(.caption.weight(.semibold)).foregroundStyle(Ink.accent)
+                                            .padding(.horizontal, 7).padding(.vertical, 3)
+                                            .background(Ink.accent.opacity(0.1), in: Capsule())
+                                    }
                                     Spacer()
                                     Image(systemName: "arrow.up.right").foregroundStyle(Ink.accent)
                                 }
@@ -54,6 +59,19 @@ struct ArtistEditor: View {
     var body: some View {
         Form {
             Section { TextField("方案名称", text: $preset.name) }
+            Section {
+                Picker(
+                    "生图请求格式",
+                    selection: Binding(
+                        get: { preset.imageRequestFormat ?? .connection },
+                        set: { preset.imageRequestFormat = $0 == .connection ? nil : $0 })
+                ) {
+                    Text("跟随连接（默认）").tag(ArtistImageRequestFormat.connection)
+                    Text("NAI").tag(ArtistImageRequestFormat.novelAI)
+                }
+            } footer: {
+                Text("NAI 使用 input、model、action、parameters，可发往支持该格式的中转。完整图片接口按填写地址发送，请求格式以此选择为准。")
+            }
             Section {
                 ForEach(0..<4, id: \.self) { index in
                     Button {
