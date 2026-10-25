@@ -28,7 +28,8 @@ final class ImportFlowTests: XCTestCase {
     @MainActor
     func testPasteNovelImport() throws {
         executionTimeAllowance = 120
-        UIPasteboard.general.string = "序章\n林舟推开书店的门。原文与 emoji 🙂 应完整导入。"
+        let copiedNovel = "序章\n林舟推开书店的门。原文与 emoji 🙂 应完整导入。"
+        UIPasteboard.general.string = copiedNovel
         let app = XCUIApplication()
         app.launchArguments = ["--moxu-picker-ui-test"]
         app.launch()
@@ -44,7 +45,13 @@ final class ImportFlowTests: XCTestCase {
         title.typeText("PasteNovel\n")
         let paste = app.buttons.matching(identifier: "novel-paste-insert").firstMatch
         try require(waitForHittable(paste, timeout: 10), "未找到系统 PasteButton")
-        paste.tap()
+        UIPasteboard.general.string = copiedNovel
+        screenshot("PasteButton before visible control tap")
+        // Form can expose a full-width AX row while the actual colored PasteButton stays on the left.
+        // Hit the visible control rather than the accessibility row's empty geometric center.
+        paste.coordinate(withNormalizedOffset: .zero).withOffset(
+            CGVector(dx: min(50, paste.frame.width / 2), dy: paste.frame.height / 2)
+        ).tap()
         let confirm = app.buttons.matching(identifier: "novel-paste-confirm").firstMatch
         try require(waitForHittable(confirm, timeout: 10), "粘贴后未找到导入确认按钮")
         confirm.tap()
@@ -114,7 +121,13 @@ final class ImportFlowTests: XCTestCase {
         guard let file else { throw PickerFailure.missing("系统文件选择器未在外部 Downloads/MoxuImportUI 找到 \(filename)") }
         try require(file.isEnabled, "系统选择器中的 \(filename) 不可用，请确认文件已下载。")
         screenshot("External Downloads system picker selecting \(filename)")
-        file.tap()
+        let filenameLabel = file.descendants(matching: .staticText).matching(
+            NSPredicate(format: "label == %@ OR label == %@", filename, stem)).firstMatch
+        if filenameLabel.exists && filenameLabel.isHittable {
+            filenameLabel.tap()
+        } else {
+            file.tap()
+        }
         let notice = app.descendants(matching: .any).matching(identifier: "import-success").firstMatch
         // Some provider presentations use selection + Open instead of opening on the first tap.
         if !notice.waitForExistence(timeout: 2) || !notice.label.contains(title) || projectCount.label == previousCount {

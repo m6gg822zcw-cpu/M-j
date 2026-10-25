@@ -27,14 +27,22 @@ struct PasteNovelSheet: View {
                         .disabled(busy)
                 }
                 Section {
-                    PasteButton(payloadType: String.self) { strings in
-                        guard !busy else { return }
-                        text = strings.joined(separator: "\n\n")
-                        focusedField = nil
-                        studio.error = nil
+                    HStack {
+                        PasteButton(payloadType: String.self) { strings in
+                            #if DEBUG
+                                PickerUITestTrace.record("paste.payload", detail: "items=\(strings.count), busy=\(busy)")
+                            #endif
+                            guard !busy else { return }
+                            text = strings.joined(separator: "\n\n")
+                            focusedField = nil
+                            studio.error = nil
+                        }
+                        .buttonStyle(.borderless)
+                        .fixedSize(horizontal: true, vertical: true)
+                        .accessibilityIdentifier("novel-paste-insert")
+                        .disabled(busy)
+                        Spacer()
                     }
-                    .accessibilityIdentifier("novel-paste-insert")
-                    .disabled(busy)
                     TextEditor(text: $text)
                         .accessibilityIdentifier("novel-paste-body")
                         .focused($focusedField, equals: .body)
