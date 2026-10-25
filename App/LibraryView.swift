@@ -1,10 +1,10 @@
 import MoxuCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
-    @State private var pickerSessionID = UUID()
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -15,7 +15,6 @@ struct LibraryView: View {
                     Label("本地保存", systemImage: "externaldrive")
                 }.font(.caption).foregroundStyle(.secondary)
                 BusyButton(title: studio.importing ? "正在读取书稿…" : "导入小说 / 工程", icon: "plus", busy: studio.importing) {
-                    pickerSessionID = UUID()
                     importing = true
                 }.accessibilityIdentifier("novel-import-primary-button")
                 if let notice = studio.importNotice {
@@ -61,7 +60,6 @@ struct LibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        pickerSessionID = UUID()
                         importing = true
                     } label: {
                         Image(systemName: "plus")
@@ -69,19 +67,20 @@ struct LibraryView: View {
                         .disabled(studio.importing)
                 }
             }
-            .sheet(isPresented: $importing) {
-                NovelDocumentPicker(onPick: { urls in
-                    importing = false
-                    guard let url = urls.first else { return }
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else {
+                        studio.reportImportFailure(StudioError.invalid("系统未返回所选文件，请重新选择。"))
+                        return
+                    }
                     #if DEBUG
-                        PickerUITestTrace.record("view.selected")
+                        PickerUITestTrace.record("picker.selected", detail: url.lastPathComponent)
                     #endif
-                    // The system picker can dismiss itself before SwiftUI calls onDismiss.
-                    // Deliver the selected file directly from its delegate callback.
                     Task { await studio.importFile(url) }
-                }, onCancel: {
-                    importing = false
-                }).id(pickerSessionID).ignoresSafeArea()
+                case .failure(let error):
+                    studio.reportImportFailure(error)
+                }
             }
     }
 }
