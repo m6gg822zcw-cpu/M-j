@@ -14,6 +14,7 @@ import UIKit
                 .task {
                     await studio.load()
                     #if DEBUG
+                        studio.preparePickerUITestFilesIfRequested()
                         await studio.runNativeSmokeChecksIfRequested()
                     #endif
                 }

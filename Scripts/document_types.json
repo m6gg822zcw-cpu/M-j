@@ -1,0 +1,130 @@
+{
+  "UIFileSharingEnabled": true,
+  "CFBundleDocumentTypes": [
+    {
+      "CFBundleTypeName": "墨序工程",
+      "CFBundleTypeRole": "Editor",
+      "LSHandlerRank": "Owner",
+      "LSItemContentTypes": [
+        "com.moxu.project"
+      ]
+    },
+    {
+      "CFBundleTypeName": "TXT 小说",
+      "CFBundleTypeRole": "Viewer",
+      "LSHandlerRank": "Alternate",
+      "LSItemContentTypes": [
+        "public.plain-text"
+      ]
+    },
+    {
+      "CFBundleTypeName": "Markdown 小说",
+      "CFBundleTypeRole": "Viewer",
+      "LSHandlerRank": "Alternate",
+      "LSItemContentTypes": [
+        "net.daringfireball.markdown"
+      ]
+    },
+    {
+      "CFBundleTypeName": "章节 JSON",
+      "CFBundleTypeRole": "Viewer",
+      "LSHandlerRank": "Alternate",
+      "LSItemContentTypes": [
+        "public.json"
+      ]
+    },
+    {
+      "CFBundleTypeName": "EPUB 小说",
+      "CFBundleTypeRole": "Viewer",
+      "LSHandlerRank": "Alternate",
+      "LSItemContentTypes": [
+        "org.idpf.epub-container"
+      ]
+    },
+    {
+      "CFBundleTypeName": "Word DOCX 小说",
+      "CFBundleTypeRole": "Viewer",
+      "LSHandlerRank": "Alternate",
+      "LSItemContentTypes": [
+        "org.openxmlformats.wordprocessingml.document"
+      ]
+    },
+    {
+      "CFBundleTypeName": "文字 PDF",
+      "CFBundleTypeRole": "Viewer",
+      "LSHandlerRank": "Alternate",
+      "LSItemContentTypes": [
+        "com.adobe.pdf"
+      ]
+    }
+  ],
+  "UTImportedTypeDeclarations": [
+    {
+      "UTTypeIdentifier": "net.daringfireball.markdown",
+      "UTTypeDescription": "Markdown 文本",
+      "UTTypeConformsTo": [
+        "public.plain-text"
+      ],
+      "UTTypeTagSpecification": {
+        "public.filename-extension": [
+          "md",
+          "markdown"
+        ],
+        "public.mime-type": [
+          "text/markdown",
+          "text/x-markdown"
+        ]
+      }
+    },
+    {
+      "UTTypeIdentifier": "org.idpf.epub-container",
+      "UTTypeDescription": "EPUB 电子书",
+      "UTTypeConformsTo": [
+        "public.data",
+        "public.composite-content"
+      ],
+      "UTTypeTagSpecification": {
+        "public.filename-extension": [
+          "epub"
+        ],
+        "public.mime-type": [
+          "application/epub+zip"
+        ]
+      }
+    },
+    {
+      "UTTypeIdentifier": "org.openxmlformats.wordprocessingml.document",
+      "UTTypeDescription": "Word DOCX 文档",
+      "UTTypeConformsTo": [
+        "public.data",
+        "public.composite-content"
+      ],
+      "UTTypeTagSpecification": {
+        "public.filename-extension": [
+          "docx"
+        ],
+        "public.mime-type": [
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ]
+      }
+    }
+  ],
+  "UTExportedTypeDeclarations": [
+    {
+      "UTTypeIdentifier": "com.moxu.project",
+      "UTTypeDescription": "墨序小说漫画工程",
+      "UTTypeConformsTo": [
+        "public.data",
+        "public.archive"
+      ],
+      "UTTypeTagSpecification": {
+        "public.filename-extension": [
+          "moxu"
+        ],
+        "public.mime-type": [
+          "application/x-moxu-project"
+        ]
+      }
+    }
+  ]
+}

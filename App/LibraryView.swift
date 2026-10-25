@@ -1,10 +1,10 @@
 import MoxuCore
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
+    @State private var pendingImport: URL?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -15,8 +15,9 @@ struct LibraryView: View {
                     Label("本地保存", systemImage: "externaldrive")
                 }.font(.caption).foregroundStyle(.secondary)
                 BusyButton(title: studio.importing ? "正在读取书稿…" : "导入小说 / 工程", icon: "plus", busy: studio.importing) {
+                    pendingImport = nil
                     importing = true
-                }
+                }.accessibilityIdentifier("novel-import-primary-button")
                 if let notice = studio.importNotice {
                     Label(notice, systemImage: "checkmark.circle.fill")
                         .font(.footnote).foregroundStyle(Ink.teal)
@@ -52,25 +53,34 @@ struct LibraryView: View {
                     Text("先配置文本与生图连接，再挑选或填写自己的画师串。你也可以只制作分镜，校准人物后再开始出图。").font(.footnote).foregroundStyle(.secondary)
                         .padding(.vertical, 14)
                 }
+                Text("版本 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")（\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")）")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("app-version")
             }.padding(24).frame(maxWidth: 900)
         }.background(Ink.paper).navigationTitle("书架").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        pendingImport = nil
                         importing = true
                     } label: {
                         Image(systemName: "plus")
-                    }.accessibilityLabel("导入小说").disabled(studio.importing)
+                    }.accessibilityLabel("导入小说").accessibilityIdentifier("novel-import-button")
+                        .disabled(studio.importing)
                 }
             }
-            // Some Files providers advertise supported books as public.data rather than their specific type.
-            // Validate the actual extension after selection so those files remain selectable.
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) {
-                result in
-                switch result {
-                case .success(let urls): if let url = urls.first { Task { await studio.importFile(url) } }
-                case .failure(let e): studio.reportImportFailure(e)
-                }
+            .sheet(isPresented: $importing, onDismiss: {
+                guard let url = pendingImport else { return }
+                pendingImport = nil
+                Task { await studio.importFile(url) }
+            }) {
+                NovelDocumentPicker(onPick: { urls in
+                    pendingImport = urls.first
+                    importing = false
+                }, onCancel: {
+                    pendingImport = nil
+                    importing = false
+                }).ignoresSafeArea()
             }
     }
 }

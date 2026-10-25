@@ -5,25 +5,44 @@ import Foundation
 #endif
 
 private final class XMLDocument: NSObject, XMLParserDelegate {
+    private static let containerNamespace = "urn:oasis:names:tc:opendocument:xmlns:container"
+    private static let packageNamespace = "http://www.idpf.org/2007/opf"
+    private static let htmlNamespace = "http://www.w3.org/1999/xhtml"
+    private static let wordNamespaces: Set<String> = [
+        "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+        "http://purl.oclc.org/ooxml/wordprocessingml/main",
+    ]
     var items: [String: String] = [:], order: [String] = [], rootfile: String?, text = ""
     private var ignoredDepth = 0
+    // Older fixtures and EPUB producers omit namespace declarations; prefixes themselves are never identities.
+    private static func matches(_ namespace: String?, _ expected: String) -> Bool {
+        namespace == nil || namespace == "" || namespace == expected
+    }
     func parser(
         _ parser: XMLParser, didStartElement name: String, namespaceURI: String?, qualifiedName q: String?,
         attributes: [String: String]
     ) {
-        if name == "rootfile" { rootfile = attributes["full-path"] }
-        if name == "item", let id = attributes["id"], let href = attributes["href"] { items[id] = href }
-        if name == "itemref", attributes["linear"] != "no", let id = attributes["idref"] { order.append(id) }
+        if name == "rootfile", Self.matches(namespaceURI, Self.containerNamespace) {
+            rootfile = attributes["full-path"]
+        }
+        if Self.matches(namespaceURI, Self.packageNamespace) {
+            if name == "item", let id = attributes["id"], let href = attributes["href"] { items[id] = href }
+            if name == "itemref", attributes["linear"] != "no", let id = attributes["idref"] { order.append(id) }
+        }
         if ignoredDepth > 0 {
             ignoredDepth += 1
             return
         }
-        if ["head", "script", "style"].contains(name.lowercased()) {
+        let isHTML = Self.matches(namespaceURI, Self.htmlNamespace)
+        let isWord = Self.wordNamespaces.contains(namespaceURI ?? "")
+        if isHTML, ["head", "script", "style"].contains(name.lowercased()) {
             ignoredDepth = 1
             return
         }
-        if ["p", "br", "div", "h1", "h2", "h3", "w:p", "w:br"].contains(name) { text += "\n" }
-        if name == "w:tab" { text += "\t" }
+        if (isHTML && ["p", "br", "div", "h1", "h2", "h3"].contains(name))
+            || (isWord && ["p", "br"].contains(name))
+        { text += "\n" }
+        if isWord, name == "tab" { text += "\t" }
     }
     func parser(_ parser: XMLParser, foundCharacters string: String) { if ignoredDepth == 0 { text += string } }
     func parser(_ parser: XMLParser, didEndElement name: String, namespaceURI: String?, qualifiedName q: String?) {
@@ -31,11 +50,14 @@ private final class XMLDocument: NSObject, XMLParserDelegate {
             ignoredDepth -= 1
             return
         }
-        if ["p", "div", "h1", "h2", "h3", "w:p"].contains(name) { text += "\n" }
+        if (Self.matches(namespaceURI, Self.htmlNamespace) && ["p", "div", "h1", "h2", "h3"].contains(name))
+            || (Self.wordNamespaces.contains(namespaceURI ?? "") && name == "p")
+        { text += "\n" }
     }
     static func read(_ data: Data) throws -> XMLDocument {
         let delegate = XMLDocument()
         let parser = XMLParser(data: data)
+        parser.shouldProcessNamespaces = true
         parser.shouldResolveExternalEntities = false
         parser.delegate = delegate
         guard parser.parse() else { throw StudioError.invalid("电子书 XML 无法解析。") }

@@ -55,9 +55,9 @@ info={
  "UISupportedInterfaceOrientations~ipad":["UIInterfaceOrientationPortrait","UIInterfaceOrientationPortraitUpsideDown","UIInterfaceOrientationLandscapeLeft","UIInterfaceOrientationLandscapeRight"],
  "NSAppTransportSecurity":{"NSAllowsArbitraryLoads":True},
  "NSLocalNetworkUsageDescription":"连接你自行配置的局域网文本或生图服务。",
- "CFBundleDocumentTypes":[{"CFBundleTypeName":"墨序工程","CFBundleTypeRole":"Editor","LSHandlerRank":"Owner","LSItemContentTypes":["com.moxu.project"]}],
- "UTExportedTypeDeclarations":[{"UTTypeIdentifier":"com.moxu.project","UTTypeDescription":"墨序小说漫画工程","UTTypeConformsTo":["public.data","public.archive"],"UTTypeTagSpecification":{"public.filename-extension":["moxu"],"public.mime-type":["application/x-moxu-project"]}}],
+
 }
+info.update(json.loads((ROOT/"Scripts"/"document_types.json").read_text()))
 (ROOT/"App"/"Info.plist").write_bytes(plistlib.dumps(info,sort_keys=False))
 privacy={"NSPrivacyTracking":False,"NSPrivacyTrackingDomains":[],"NSPrivacyCollectedDataTypes":[],"NSPrivacyAccessedAPITypes":[
  {"NSPrivacyAccessedAPIType":"NSPrivacyAccessedAPICategoryUserDefaults","NSPrivacyAccessedAPITypeReasons":["CA92.1"]},

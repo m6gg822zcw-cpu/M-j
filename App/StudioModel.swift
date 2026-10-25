@@ -19,7 +19,7 @@ import UIKit
     private var worker: Task<Void, Never>?
     private var backgroundID: UIBackgroundTaskIdentifier = .invalid
     private var inBackground = false
-    private var didStartLoading = false
+    private var loadingTask: Task<Void, Never>?
     #if DEBUG
         private var didRunNativeSmokeChecks = false
     #endif
@@ -31,20 +31,28 @@ import UIKit
         pipeline = Pipeline(repository: repo, client: client, processor: processor)
     }
     func load() async {
-        guard !didStartLoading else { return }
-        didStartLoading = true
-        do {
-            try await repository.prepare()
-            settings = try await repository.settings()
-            projects = try await repository.list()
-            jobs = try await repository.jobs()
-            for i in jobs.indices where jobs[i].state == .running || jobs[i].state == .queued {
-                jobs[i].state = .paused
-                jobs[i].message = "已恢复断点，点继续制作"
-            }
-            try await repository.saveJobs(jobs)
-        } catch { report(error) }
-        loading = false
+        if let task = loadingTask {
+            await task.value
+            return
+        }
+        // A file URL can launch the App before the root view's task has completed.
+        // All callers await the same initialization instead of returning midway through it.
+        let task = Task { @MainActor [self] in
+            do {
+                try await repository.prepare()
+                settings = try await repository.settings()
+                projects = try await repository.list()
+                jobs = try await repository.jobs()
+                for i in jobs.indices where jobs[i].state == .running || jobs[i].state == .queued {
+                    jobs[i].state = .paused
+                    jobs[i].message = "已恢复断点，点继续制作"
+                }
+                try await repository.saveJobs(jobs)
+            } catch { report(error) }
+            loading = false
+        }
+        loadingTask = task
+        await task.value
     }
     func refresh() async {
         do {
@@ -94,7 +102,11 @@ import UIKit
         settings.profiles.first(where: { $0.id == id && $0.kind.isText == text })
     }
     func importFile(_ url: URL) async {
-        guard !importing else { return }
+        await load()
+        guard !importing else {
+            error = "正在导入另一份文件，请等它完成后再选择这份小说。"
+            return
+        }
         importing = true
         importNotice = nil
         error = nil
@@ -159,6 +171,27 @@ import UIKit
         await importFile(url)
     }
     #if DEBUG
+        /// Creates source documents only; UI tests must select them through the system picker.
+        func preparePickerUITestFilesIfRequested() {
+            guard ProcessInfo.processInfo.arguments.contains("--moxu-picker-ui-test") else { return }
+            do {
+                let directory = URL.documentsDirectory.appendingPathComponent("PickerUI", isDirectory: true)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                // This bare preface reproduced the old heading parser consuming the first body paragraph.
+                let txtURL = directory.appendingPathComponent("PickerNovel.txt")
+                if !FileManager.default.fileExists(atPath: txtURL.path) {
+                    try Data("序章\n林舟推开书店的门。原文与 emoji 🙂 应完整导入。".utf8)
+                        .write(to: txtURL, options: .atomic)
+                }
+                let jsonURL = directory.appendingPathComponent("PickerChapters.json")
+                if !FileManager.default.fileExists(atPath: jsonURL.path) {
+                    let json = try JSONSerialization.data(withJSONObject: [
+                        "chapters": [["title": "第一章 桥灯", "text": "苏禾提着铜灯走过桥头。"]]
+                    ])
+                    try json.write(to: jsonURL, options: .atomic)
+                }
+            } catch { report(error) }
+        }
         /// Runs only when explicitly requested by the simulator verification script.
         @MainActor func runNativeSmokeChecksIfRequested() async {
             guard ProcessInfo.processInfo.arguments.contains("--moxu-native-smoke"), !didRunNativeSmokeChecks else {

@@ -125,3 +125,5 @@ if report.get("success") is not True or len(report.get("checks", [])) < 9:
 print("原生导入/导出检查通过；实物在 build/smoke/native。")
 PY
 echo "已检查本地导入与导出，不代替第三方云盘授权、气泡手势和真机完整验收。"
+echo "继续通过真实系统文件选择器检查 TXT / JSON 导入及取消后重开。"
+bash Scripts/picker_ui_test.sh "$device_id"

@@ -41,7 +41,7 @@ public enum ChapterParser {
         let pattern =
             headingPattern?.isEmpty == false
             ? headingPattern!
-            : #"^[\t 　]*(?:第\s*[零〇一二三四五六七八九十百千万两0-9０-９]+\s*[章回节集卷部話话節].{0,65}|(?:chapter|part)\s+[0-9ivxlcdm]+[^\n]{0,65}|(?:序章|楔子|序幕|引子|尾声|终章|后记|番外)(?:[\s　:：、.．—\-][^\n]*|[零一二三四五六七八九十0-9]{0,6})|#{1,4}[\t ]+[^\n]{1,80})[\t 　]*$"#
+            : #"^[\t 　]*(?:第[\t 　]*[零〇一二三四五六七八九十百千万两0-9０-９]+[\t 　]*[章回节集卷部話话節].{0,65}|(?:chapter|part)[\t 　]+[0-9ivxlcdm]+[^\n]{0,65}|(?:序章|楔子|序幕|引子|尾声|终章|后记|番外)(?:[\t 　:：、.．—\-][^\n]*|[零一二三四五六七八九十0-9]{0,6})|#{1,4}[\t ]+[^\n]{1,80})[\t 　]*$"#
         let regex = try NSRegularExpression(pattern: pattern, options: [.anchorsMatchLines, .caseInsensitive])
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
         guard !matches.isEmpty else { return [RawChapter(title: title, text: text, sourceStart: 0)] }

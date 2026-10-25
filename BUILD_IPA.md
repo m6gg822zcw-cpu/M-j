@@ -1,8 +1,8 @@
 # 给 Codex 的 IPA 构建交接
 
-这是墨序 iOS 原生源码 v1.1.2（build 4），用户要求完成 iOS 编译并生成 IPA。优先使用已有 Mac / macOS CI 与签名环境继续构建、修复和验收。项目入口为 `Moxu.xcodeproj`，scheme 为 `Moxu`，最低 iOS 17，建议 Xcode 16 或更新。
+这是墨序 iOS 原生源码 v1.1.3（build 5），用户要求完成 iOS 编译并生成 IPA。优先使用已有 Mac / macOS CI 与签名环境继续构建、修复和验收。项目入口为 `Moxu.xcodeproj`，scheme 为 `Moxu`，最低 iOS 17，建议 Xcode 16 或更新。
 
-**当前状态（v1.1.2 build 4）：**Linux / macOS 87 项核心测试、8 项打包校验、真实 Xcode 编译、模拟器启动及 9 项本地导入/导出检查通过；Release iPhoneOS arm64 未签名 IPA 已生成并校验。需要有效签名后安装。结果见 [修复记录](Docs/v1.1.2_导入与整页漫画.md)。
+**当前状态（v1.1.3 build 5）：**95 项 Linux 核心测试通过；真实 iOS 编译、系统文件选择器 UI 测试及更新 IPA 正在验证。上一版仅覆盖内部文件导入方法，本版增加实际系统选择与存档核对。结果见 [小说导入修复记录](Docs/v1.1.3_小说导入修复.md)。
 
 ## 最短打包路径
 
