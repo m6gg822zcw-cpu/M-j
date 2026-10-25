@@ -2,19 +2,19 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// Ask Files to hand the app a local copy before starting the existing import pipeline.
+/// Ask Files for read access; CoordinatedImport creates the bounded local snapshot.
 struct NovelDocumentPicker: UIViewControllerRepresentable {
     let onPick: ([URL]) -> Void
     let onCancel: () -> Void
 
     func makeUIViewController(context: Context) -> NovelPickerController {
-        let picker = NovelPickerController(forOpeningContentTypes: [.data], asCopy: true)
+        let picker = NovelPickerController(forOpeningContentTypes: [.item], asCopy: false)
         picker.retainedCoordinator = context.coordinator
         picker.delegate = context.coordinator
         picker.allowsMultipleSelection = false
         picker.shouldShowFileExtensions = true
         #if DEBUG
-            PickerUITestTrace.record("picker.created", detail: "\(context.coordinator.sessionID), controller=\(ObjectIdentifier(picker))")
+            PickerUITestTrace.record("picker.created", detail: "\(context.coordinator.sessionID), controller=\(ObjectIdentifier(picker)), openInPlace=true, jsonIsData=\(UTType.json.conforms(to: .data))")
         #endif
         return picker
     }

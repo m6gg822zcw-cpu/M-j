@@ -66,9 +66,13 @@ import UIKit
             let diagnostic = e as NSError
             PickerUITestTrace.record("import.failed", detail: "\(diagnostic.domain) \(diagnostic.code): \(diagnostic.localizedDescription)")
         #endif
-        guard !CoordinatedImport.isCancellation(e) else { return }
+        let cancelled = CoordinatedImport.isCancellation(e)
+        guard !cancelled || fileName != nil else { return }
         let context = fileName.map { "未能导入「\($0)」" } ?? "未能选择导入文件"
-        error = "\(context)：\(e.localizedDescription)"
+        let reason = cancelled
+            ? "文件提供器中断了读取，请先在「文件」App 中下载并打开这份书稿，再重新导入。"
+            : e.localizedDescription
+        error = "\(context)：\(reason)"
     }
     func saveSettings(_ value: AppSettings) async throws {
         try await repository.saveSettings(value)
