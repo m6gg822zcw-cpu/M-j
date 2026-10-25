@@ -11,8 +11,8 @@ export_attachments() {
   trap - EXIT
   if [[ -n "${bundle_id:-}" ]]; then
     trace_container="$(xcrun simctl get_app_container "$device_id" "$bundle_id" data 2>/dev/null)" || trace_container=""
-    if [[ -n "$trace_container" && -f "$trace_container/Documents/PickerUI/PickerEvents.json" ]]; then
-      cp "$trace_container/Documents/PickerUI/PickerEvents.json" "$smoke_dir/picker-events.json" || true
+    if [[ -n "$trace_container" && -f "$trace_container/Documents/PickerUITestEvents.json" ]]; then
+      cp "$trace_container/Documents/PickerUITestEvents.json" "$smoke_dir/picker-events.json" || true
     fi
   fi
   if [[ -d "$smoke_dir/PickerUI.xcresult" ]]; then

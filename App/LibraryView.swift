@@ -4,6 +4,7 @@ import SwiftUI
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
+    @State private var pickerSessionID = UUID()
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -14,6 +15,7 @@ struct LibraryView: View {
                     Label("本地保存", systemImage: "externaldrive")
                 }.font(.caption).foregroundStyle(.secondary)
                 BusyButton(title: studio.importing ? "正在读取书稿…" : "导入小说 / 工程", icon: "plus", busy: studio.importing) {
+                    pickerSessionID = UUID()
                     importing = true
                 }.accessibilityIdentifier("novel-import-primary-button")
                 if let notice = studio.importNotice {
@@ -59,7 +61,8 @@ struct LibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                            importing = true
+                        pickerSessionID = UUID()
+                        importing = true
                     } label: {
                         Image(systemName: "plus")
                     }.accessibilityLabel("导入小说").accessibilityIdentifier("novel-import-button")
@@ -78,7 +81,7 @@ struct LibraryView: View {
                     Task { await studio.importFile(url) }
                 }, onCancel: {
                     importing = false
-                }).ignoresSafeArea()
+                }).id(pickerSessionID).ignoresSafeArea()
             }
     }
 }
