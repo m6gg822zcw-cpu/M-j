@@ -46,6 +46,7 @@ print(bundle)
 PY
 )"
 
+xcrun --sdk iphonesimulator --show-sdk-version > "$smoke_dir/sdk-version.txt"
 xcrun simctl list runtimes --json > "$smoke_dir/runtimes.json"
 xcrun simctl list devicetypes --json > "$smoke_dir/devicetypes.json"
 python3 - "$smoke_dir" <<'PY' > "$smoke_dir/selection.txt"
@@ -63,22 +64,26 @@ def packed_version(value):
     numbers += [0] * (3 - len(numbers))
     return (numbers[0] << 16) | (numbers[1] << 8) | numbers[2]
 
+sdk_version = packed_version((folder / "sdk-version.txt").read_text().strip())
 pairs = []
 for runtime in runtimes:
     if (not runtime.get("isAvailable")
             or not runtime.get("identifier", "").startswith("com.apple.CoreSimulator.SimRuntime.iOS-")):
         continue
     version = packed_version(runtime["version"])
+    # XCTest and its runtime support should match the selected Xcode's SDK major.
+    if version >> 16 != sdk_version >> 16:
+        continue
     for device_type in types:
         if not device_type.get("identifier", "").startswith("com.apple.CoreSimulator.SimDeviceType.iPhone-"):
             continue
         minimum = device_type.get("minRuntimeVersion", 0)
         maximum = device_type.get("maxRuntimeVersion", 0xFFFFFFFF)
         if minimum <= version <= maximum:
-            pairs.append((version, minimum, device_type["identifier"], runtime, device_type))
+            pairs.append((version == sdk_version, version, minimum, device_type["identifier"], runtime, device_type))
 if not pairs:
-    sys.exit("没有已安装且可用的兼容 iOS runtime / iPhone 设备类型；请检查 Xcode Simulator 平台安装。")
-_, _, _, runtime, device_type = max(pairs, key=lambda item: item[:3])
+    sys.exit("没有与当前 Xcode SDK 匹配且可用的 iOS runtime / iPhone 设备类型；请检查 Xcode Simulator 平台安装。")
+_, _, _, _, runtime, device_type = max(pairs, key=lambda item: item[:4])
 (folder / "selection.json").write_text(json.dumps(
     {"runtime": runtime, "deviceType": device_type}, ensure_ascii=False, indent=2))
 print(runtime["identifier"], device_type["identifier"])

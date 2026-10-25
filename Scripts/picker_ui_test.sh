@@ -6,6 +6,16 @@ device_id="${1:-}"
 [[ "$(uname -s)" == Darwin ]] || { echo "真实系统文件选择器 UI 测试需要 Xcode 和 iOS Simulator。" >&2; exit 1; }
 mkdir -p build/smoke
 smoke_dir="$PWD/build/smoke"
+export_attachments() {
+  result=$?
+  trap - EXIT
+  if [[ -d "$smoke_dir/PickerUI.xcresult" ]]; then
+    xcrun xcresulttool export attachments --path "$smoke_dir/PickerUI.xcresult" \
+      --output-path "$smoke_dir/picker-attachments" || true
+  fi
+  exit "$result"
+}
+trap export_attachments EXIT
 rm -rf "$smoke_dir/PickerUI.xcresult"
 rm -f "$smoke_dir/picker-storage.json" "$smoke_dir/picker-baseline.json"
 app_path="$PWD/build/DerivedData/Build/Products/Debug-iphonesimulator/Moxu.app"
@@ -37,11 +47,11 @@ output.write_text(json.dumps({"originals": originals, "projectIDs": [p.parent.na
 PY
 xcodebuild -project Moxu.xcodeproj -scheme Moxu -configuration Debug \
   -destination "platform=iOS Simulator,id=$device_id" -destination-timeout 30 \
-  -derivedDataPath build/DerivedData -resultBundlePath "$smoke_dir/PickerUI.xcresult" \
+  -derivedDataPath build/PickerDerivedData -resultBundlePath "$smoke_dir/PickerUI.xcresult" \
   -parallel-testing-enabled NO -maximum-concurrent-test-simulator-destinations 1 \
   -test-timeouts-enabled YES -default-test-execution-time-allowance 240 -maximum-test-execution-time-allowance 300 \
   -only-testing:MoxuUITests/ImportFlowTests \
-  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO test 2>&1 | tee "$smoke_dir/picker-ui-test.log"
+  ONLY_ACTIVE_ARCH=YES ARCHS="$(uname -m)" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO test 2>&1 | tee "$smoke_dir/picker-ui-test.log"
 
 container_path="$(xcrun simctl get_app_container "$device_id" "$bundle_id" data)"
 python3 - "$container_path" "$smoke_dir/picker-baseline.json" "$smoke_dir/picker-storage.json" <<'PY'
