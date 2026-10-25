@@ -35,15 +35,38 @@ struct NovelDocumentPicker: UIViewControllerRepresentable {
         }
 
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            #if DEBUG
+                PickerUITestTrace.record("delegate.selected", detail: "\(urls.count) files, completed=\(completed)")
+            #endif
             guard !completed else { return }
             completed = true
             if urls.isEmpty { onCancel() } else { onPick(urls) }
         }
 
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            #if DEBUG
+                PickerUITestTrace.record("delegate.cancelled", detail: "completed=\(completed)")
+            #endif
             guard !completed else { return }
             completed = true
             onCancel()
         }
     }
 }
+
+#if DEBUG
+    enum PickerUITestTrace {
+        static func record(_ event: String, detail: String = "") {
+            guard ProcessInfo.processInfo.arguments.contains("--moxu-picker-ui-test") else { return }
+            do {
+                let folder = URL.documentsDirectory.appendingPathComponent("PickerUI", isDirectory: true)
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                let file = folder.appendingPathComponent("PickerEvents.json")
+                var events = (try? JSONSerialization.jsonObject(with: Data(contentsOf: file))) as? [[String: Any]] ?? []
+                events.append(["event": event, "detail": detail, "time": Date().timeIntervalSince1970])
+                try JSONSerialization.data(withJSONObject: events, options: [.prettyPrinted, .sortedKeys])
+                    .write(to: file, options: .atomic)
+            } catch { print("Picker UI trace failed: \(error.localizedDescription)") }
+        }
+    }
+#endif

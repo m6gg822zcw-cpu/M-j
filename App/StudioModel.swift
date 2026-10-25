@@ -63,6 +63,9 @@ import UIKit
     func report(_ e: Error) { error = e.localizedDescription }
     func reportImportFailure(_ e: Error, fileName: String? = nil) {
         guard !CoordinatedImport.isCancellation(e) else { return }
+        #if DEBUG
+            PickerUITestTrace.record("import.failed", detail: e.localizedDescription)
+        #endif
         let context = fileName.map { "未能导入「\($0)」" } ?? "未能选择导入文件"
         error = "\(context)：\(e.localizedDescription)"
     }
@@ -102,6 +105,9 @@ import UIKit
         settings.profiles.first(where: { $0.id == id && $0.kind.isText == text })
     }
     func importFile(_ url: URL) async {
+        #if DEBUG
+            PickerUITestTrace.record("import.requested", detail: url.lastPathComponent)
+        #endif
         await load()
         guard !importing else {
             error = "正在导入另一份文件，请等它完成后再选择这份小说。"
@@ -153,6 +159,9 @@ import UIKit
         } catch { report(error) }
     }
     private func finishImport(_ project: Project) async {
+        #if DEBUG
+            PickerUITestTrace.record("import.saved", detail: project.title)
+        #endif
         importNotice = "已导入《\(project.title)》，共 \(project.chapters.count) 章。"
         selectedTab = 0
         do {

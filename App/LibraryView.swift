@@ -4,7 +4,6 @@ import SwiftUI
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
-    @State private var pendingImport: URL?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -15,7 +14,6 @@ struct LibraryView: View {
                     Label("本地保存", systemImage: "externaldrive")
                 }.font(.caption).foregroundStyle(.secondary)
                 BusyButton(title: studio.importing ? "正在读取书稿…" : "导入小说 / 工程", icon: "plus", busy: studio.importing) {
-                    pendingImport = nil
                     importing = true
                 }.accessibilityIdentifier("novel-import-primary-button")
                 if let notice = studio.importNotice {
@@ -61,24 +59,24 @@ struct LibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        pendingImport = nil
-                        importing = true
+                            importing = true
                     } label: {
                         Image(systemName: "plus")
                     }.accessibilityLabel("导入小说").accessibilityIdentifier("novel-import-button")
                         .disabled(studio.importing)
                 }
             }
-            .sheet(isPresented: $importing, onDismiss: {
-                guard let url = pendingImport else { return }
-                pendingImport = nil
-                Task { await studio.importFile(url) }
-            }) {
+            .sheet(isPresented: $importing) {
                 NovelDocumentPicker(onPick: { urls in
-                    pendingImport = urls.first
                     importing = false
+                    guard let url = urls.first else { return }
+                    #if DEBUG
+                        PickerUITestTrace.record("view.selected")
+                    #endif
+                    // The system picker can dismiss itself before SwiftUI calls onDismiss.
+                    // Deliver the selected file directly from its delegate callback.
+                    Task { await studio.importFile(url) }
                 }, onCancel: {
-                    pendingImport = nil
                     importing = false
                 }).ignoresSafeArea()
             }
