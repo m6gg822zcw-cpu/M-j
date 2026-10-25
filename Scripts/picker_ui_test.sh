@@ -23,7 +23,7 @@ export_attachments() {
 }
 trap export_attachments EXIT
 rm -rf "$smoke_dir/PickerUI.xcresult"
-rm -f "$smoke_dir/picker-storage.json" "$smoke_dir/picker-baseline.json"
+rm -f "$smoke_dir/picker-storage.json" "$smoke_dir/picker-baseline.json" "$smoke_dir/picker-external-source.json"
 app_path="$PWD/build/DerivedData/Build/Products/Debug-iphonesimulator/Moxu.app"
 bundle_id="$(python3 - "$app_path/Info.plist" <<'PY'
 import plistlib, sys
@@ -51,6 +51,63 @@ if not projects.is_dir():
     sys.exit("找不到实际 App 工程存档目录。")
 output.write_text(json.dumps({"originals": originals, "projectIDs": [p.parent.name for p in projects.glob("*/Project.json")]}, indent=2))
 PY
+
+# Initialize the real On My iPhone provider, then place fixtures in its Downloads folder.
+# The app is never given this private simulator path: XCTest must browse Files normally.
+xcrun simctl launch "$device_id" com.apple.DocumentsApp 2>&1 | tee "$smoke_dir/picker-files-launch.log"
+python3 - "$container_path" "$smoke_dir/picker-baseline.json" "$smoke_dir/picker-external-source.json" <<'PY'
+import hashlib, json, pathlib, plistlib, sys, time
+container, baseline_path, diagnostic = map(pathlib.Path, sys.argv[1:])
+report = {"success": False, "groupIdentifier": "group.com.apple.FileProvider.LocalStorage"}
+try:
+    simulator_data = next((p for p in container.parents
+                           if p.name == "data" and (p / "Containers/Shared/AppGroup").is_dir()), None)
+    if simulator_data is None:
+        raise ValueError("无法从当前 App 容器定位此模拟器的 data/Containers/Shared/AppGroup。")
+    groups = simulator_data / "Containers/Shared/AppGroup"
+    matches = []
+    for attempt in range(20):
+        seen, matches = [], []
+        for metadata in sorted(groups.glob("*/.com.apple.mobile_container_manager.metadata.plist")):
+            try:
+                # Read only the container's public identifier, never other metadata or credentials.
+                with metadata.open("rb") as handle:
+                    identifier = plistlib.load(handle).get("MCMMetadataIdentifier")
+                seen.append({"container": metadata.parent.name, "identifier": identifier})
+                if identifier == report["groupIdentifier"]:
+                    matches.append(metadata.parent)
+            except (OSError, ValueError, plistlib.InvalidFileException) as error:
+                seen.append({"container": metadata.parent.name, "errorType": type(error).__name__})
+        report["metadataIdentifiers"] = seen
+        if matches:
+            break
+        time.sleep(0.5)
+    if len(matches) != 1:
+        raise ValueError(f"必须找到唯一的 LocalStorage provider group，实际找到 {len(matches)} 个；见安全标识诊断。")
+    external = matches[0] / "File Provider Storage/Downloads/MoxuImportUI"
+    external.mkdir(parents=True, exist_ok=True)
+    baseline = json.loads(baseline_path.read_text())
+    hashes = {}
+    for name, expected_hash in baseline["originals"].items():
+        data = (container / "Documents/PickerUI" / name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != expected_hash:
+            raise ValueError("复制前 App 私有夹具字节已改变。")
+        destination = external / name
+        destination.write_bytes(data)
+        hashes[name] = hashlib.sha256(destination.read_bytes()).hexdigest()
+    if hashes != baseline["originals"]:
+        raise ValueError("外部 Downloads 夹具复制校验失败。")
+    baseline["externalSource"] = {"directory": str(external), "originals": hashes}
+    baseline_path.write_text(json.dumps(baseline, ensure_ascii=False, indent=2))
+    report.update(success=True, directory=str(external), originalsSHA256=hashes)
+except Exception as error:
+    report["error"] = str(error)
+diagnostic.write_text(json.dumps(report, ensure_ascii=False, indent=2))
+if not report["success"]:
+    sys.exit("外部 Files 测试源初始化失败：" + report["error"])
+print("测试文件已复制到真正的 On My iPhone / Downloads / MoxuImportUI。")
+PY
+xcrun simctl terminate "$device_id" com.apple.DocumentsApp || true
 xcodebuild -project Moxu.xcodeproj -scheme Moxu -configuration Debug \
   -destination "platform=iOS Simulator,id=$device_id" -destination-timeout 30 \
   -derivedDataPath build/PickerDerivedData -resultBundlePath "$smoke_dir/PickerUI.xcresult" \
@@ -70,6 +127,11 @@ try:
     hashes = {name: hashlib.sha256((originals / name).read_bytes()).hexdigest() for name in baseline["originals"]}
     if hashes != baseline["originals"]:
         raise ValueError("系统选择和导入过程修改了原始书稿字节。")
+    external = pathlib.Path(baseline["externalSource"]["directory"])
+    external_hashes = {name: hashlib.sha256((external / name).read_bytes()).hexdigest()
+                       for name in baseline["externalSource"]["originals"]}
+    if external_hashes != baseline["externalSource"]["originals"]:
+        raise ValueError("系统选择和导入过程修改了外部 Downloads 原始书稿字节。")
     txt = "序章\n林舟推开书店的门。原文与 emoji 🙂 应完整导入。"
     if (originals / "PickerNovel.txt").read_text() != txt:
         raise ValueError("TXT 原始夹具内容不符。")
@@ -102,7 +164,8 @@ try:
                                   "chapterCount": len(chapters), "chapterTitle": chapter_title, "body": actual})
     if any(counts[name] != expected[name][0] for name in expected):
         raise ValueError(f"真实系统选择器应新增两次TXT、一次JSON存档，实际：{counts}")
-    report.update(success=True, originalsSHA256=hashes)
+    report.update(success=True, originalsSHA256=hashes, externalOriginalsSHA256=external_hashes,
+                  externalSource="On My iPhone/Downloads/MoxuImportUI")
 except Exception as error:
     report["error"] = str(error)
 output.write_text(json.dumps(report, ensure_ascii=False, indent=2))

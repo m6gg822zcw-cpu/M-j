@@ -47,10 +47,15 @@ final class ImportFlowTests: XCTestCase {
         let stem = (filename as NSString).deletingPathExtension
         var file: XCUIElement?
         for _ in 0..<18 {
-            if let found = namedElement([filename, stem], app: app) { file = found; break }
-            // directoryURL is a hint; a fresh Files provider can start in Recents instead.
+            // A matching filename in Recents or this app's own Documents is not sufficient.
+            // Only select after navigating into the host-created external Downloads fixture folder.
+            if externalFolderIsOpen(app) {
+                if let found = namedElement([filename, stem], app: app) { file = found; break }
+                Thread.sleep(forTimeInterval: 0.5)
+                continue
+            }
             var navigated = false
-            for names in [["PickerUI"], ["墨序", "Moxu"],
+            for names in [["MoxuImportUI"], ["Downloads", "下载项目", "下載項目", "下载", "下載"],
                           ["On My iPhone", "我的 iPhone", "在我的 iPhone", "我的iPhone"],
                           ["Browse", "浏览", "瀏覽"], ["Continue", "继续"]] {
                 if let element = namedElement(names, app: app) {
@@ -62,8 +67,8 @@ final class ImportFlowTests: XCTestCase {
             if !navigated { app.swipeDown() }
             Thread.sleep(forTimeInterval: 0.5)
         }
-        guard let file else { throw PickerFailure.missing("系统文件选择器未找到 \(filename)") }
-        screenshot("System picker selecting \(filename)")
+        guard let file else { throw PickerFailure.missing("系统文件选择器未在外部 Downloads/MoxuImportUI 找到 \(filename)") }
+        screenshot("External Downloads system picker selecting \(filename)")
         file.tap()
         let notice = app.descendants(matching: .any).matching(identifier: "import-success").firstMatch
         // Some provider presentations use selection + Open instead of opening on the first tap.
@@ -95,6 +100,12 @@ final class ImportFlowTests: XCTestCase {
     @MainActor
     private func importButton(_ app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(identifier: "novel-import-button").firstMatch
+    }
+
+    @MainActor
+    private func externalFolderIsOpen(_ app: XCUIApplication) -> Bool {
+        let predicate = NSPredicate(format: "label == %@ OR label BEGINSWITH %@", "MoxuImportUI", "MoxuImportUI,")
+        return app.navigationBars.descendants(matching: .any).matching(predicate).firstMatch.exists
     }
 
     @MainActor

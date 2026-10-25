@@ -14,11 +14,6 @@ struct NovelDocumentPicker: UIViewControllerRepresentable {
         picker.allowsMultipleSelection = false
         picker.shouldShowFileExtensions = true
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--moxu-picker-ui-test") {
-                picker.directoryURL = URL.documentsDirectory.appendingPathComponent("PickerUI", isDirectory: true)
-            }
-        #endif
-        #if DEBUG
             PickerUITestTrace.record("picker.created", detail: "\(context.coordinator.sessionID), controller=\(ObjectIdentifier(picker))")
         #endif
         return picker
