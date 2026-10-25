@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class ImportFlowTests: XCTestCase {
     private enum PickerFailure: Error { case missing(String) }
@@ -22,6 +23,46 @@ final class ImportFlowTests: XCTestCase {
                 add(attachment)
             }
         }
+    }
+
+    @MainActor
+    func testPasteNovelImport() throws {
+        executionTimeAllowance = 120
+        UIPasteboard.general.string = "序章\n林舟推开书店的门。原文与 emoji 🙂 应完整导入。"
+        let app = XCUIApplication()
+        app.launchArguments = ["--moxu-picker-ui-test"]
+        app.launch()
+        let projectCount = app.descendants(matching: .any).matching(identifier: "project-count").firstMatch
+        try require(projectCount.waitForExistence(timeout: 15), "粘贴前未找到书架作品数量")
+        let previousCount = projectCount.label
+        let entry = app.buttons.matching(identifier: "novel-paste-button").firstMatch
+        try require(waitForHittable(entry, timeout: 15), "未找到粘贴小说入口")
+        entry.tap()
+        let title = app.textFields.matching(identifier: "novel-paste-title").firstMatch
+        try require(waitForHittable(title, timeout: 10), "未找到粘贴小说书名输入框")
+        title.tap()
+        title.typeText("PasteNovel\n")
+        let paste = app.buttons.matching(identifier: "novel-paste-insert").firstMatch
+        try require(waitForHittable(paste, timeout: 10), "未找到系统 PasteButton")
+        paste.tap()
+        let confirm = app.buttons.matching(identifier: "novel-paste-confirm").firstMatch
+        try require(waitForHittable(confirm, timeout: 10), "粘贴后未找到导入确认按钮")
+        confirm.tap()
+        let notice = app.descendants(matching: .any).matching(identifier: "import-success").firstMatch
+        let success = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND label CONTAINS %@", "PasteNovel"), object: notice)
+        let addedProject = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND label != %@", previousCount), object: projectCount)
+        try require(XCTWaiter.wait(for: [success, addedProject], timeout: 20) == .completed,
+                    "真正 PasteButton 导入后未收到成功提示及作品数量变化")
+        var book = app.staticTexts["PasteNovel"].firstMatch
+        for _ in 0..<8 {
+            if book.exists && book.isHittable { break }
+            app.swipeUp()
+            book = app.staticTexts["PasteNovel"].firstMatch
+        }
+        try require(book.exists && book.isHittable, "书架未显示粘贴导入的 PasteNovel")
+        screenshot("PasteButton imported bookshelf PasteNovel")
     }
 
     @MainActor
@@ -71,6 +112,7 @@ final class ImportFlowTests: XCTestCase {
             Thread.sleep(forTimeInterval: 0.5)
         }
         guard let file else { throw PickerFailure.missing("系统文件选择器未在外部 Downloads/MoxuImportUI 找到 \(filename)") }
+        try require(file.isEnabled, "系统选择器中的 \(filename) 不可用，请确认文件已下载。")
         screenshot("External Downloads system picker selecting \(filename)")
         file.tap()
         let notice = app.descendants(matching: .any).matching(identifier: "import-success").firstMatch
@@ -143,7 +185,7 @@ final class ImportFlowTests: XCTestCase {
 
     @MainActor
     private func waitForHittable(_ element: XCUIElement, timeout: TimeInterval) -> Bool {
-        let predicate = NSPredicate { _, _ in element.exists && element.isHittable }
+        let predicate = NSPredicate { _, _ in element.exists && element.isHittable && element.isEnabled }
         return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: timeout) == .completed
     }
 

@@ -15,6 +15,41 @@ export_attachments() {
       cp "$trace_container/Documents/PickerUITestEvents.json" "$smoke_dir/picker-events.json" || true
     fi
   fi
+  # Preserve independent paste evidence even when the later Files test fails.
+  # This observer must never replace the original xcodebuild/script exit status.
+  python3 - "${trace_container:-}" "$smoke_dir/paste-storage.json" <<'PY' || true
+import json, pathlib, sys
+container_path, output_path = sys.argv[1:]
+report = {"success": False, "title": "PasteNovel"}
+try:
+    if not container_path:
+        raise ValueError("无法取得测试 App 的真实数据容器。")
+    projects = pathlib.Path(container_path) / "Library/Application Support/Moxu/Projects"
+    if not projects.is_dir():
+        raise ValueError("找不到 App 的真实作品存档目录。")
+    matches = []
+    for path in projects.glob("*/Project.json"):
+        project = json.loads(path.read_text())
+        if project.get("title") == "PasteNovel":
+            matches.append((path, project))
+    if len(matches) != 1:
+        raise ValueError(f"应恰好有一份 PasteNovel 真实存档，实际 {len(matches)} 份。")
+    path, project = matches[0]
+    chapters = project.get("chapters", [])
+    if len(chapters) != 1 or chapters[0].get("title") != "序章":
+        raise ValueError("PasteNovel 应只有一章，章标题为序章。")
+    units = json.loads((path.parent / "Chapters/1-source.json").read_text())
+    body = "\n".join(unit["text"] for unit in units)
+    expected = "林舟推开书店的门。原文与 emoji 🙂 应完整导入。"
+    if body != expected:
+        raise ValueError(f"PasteNovel 实际存档正文不符：{body!r}")
+    report.update(success=True, projectID=path.parent.name, chapterCount=1,
+                  chapterTitle="序章", body=body)
+except Exception as error:
+    report["error"] = str(error)
+pathlib.Path(output_path).write_text(json.dumps(report, ensure_ascii=False, indent=2))
+print("PasteButton 独立真实存档校验：" + ("通过" if report["success"] else report["error"]))
+PY
   if [[ -d "$smoke_dir/PickerUI.xcresult" ]]; then
     xcrun xcresulttool export attachments --path "$smoke_dir/PickerUI.xcresult" \
       --output-path "$smoke_dir/picker-attachments" || true
@@ -23,7 +58,7 @@ export_attachments() {
 }
 trap export_attachments EXIT
 rm -rf "$smoke_dir/PickerUI.xcresult"
-rm -f "$smoke_dir/picker-storage.json" "$smoke_dir/picker-baseline.json" "$smoke_dir/picker-external-source.json"
+rm -f "$smoke_dir/picker-storage.json" "$smoke_dir/picker-baseline.json" "$smoke_dir/picker-external-source.json" "$smoke_dir/paste-storage.json"
 app_path="$PWD/build/DerivedData/Build/Products/Debug-iphonesimulator/Moxu.app"
 bundle_id="$(python3 - "$app_path/Info.plist" <<'PY'
 import plistlib, sys

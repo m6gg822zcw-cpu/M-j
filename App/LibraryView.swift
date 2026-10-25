@@ -5,12 +5,7 @@ import UniformTypeIdentifiers
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
-    private var importTypes: [UTType] {
-        [.plainText, .utf8PlainText, .json, .pdf]
-            + ["net.daringfireball.markdown", "org.idpf.epub-container",
-               "org.openxmlformats.wordprocessingml.document", "com.moxu.project"].compactMap { UTType($0) }
-            + [.item]
-    }
+    @State private var pasting = false
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
@@ -24,6 +19,11 @@ struct LibraryView: View {
                 BusyButton(title: studio.importing ? "正在读取书稿…" : "导入小说 / 工程", icon: "plus", busy: studio.importing) {
                     importing = true
                 }.accessibilityIdentifier("novel-import-primary-button")
+                Button("粘贴书稿", systemImage: "doc.on.clipboard") {
+                    pasting = true
+                }.font(.footnote).disabled(studio.importing)
+                    .accessibilityIdentifier("novel-paste-button")
+                    .sheet(isPresented: $pasting) { PasteNovelSheet() }
                 if let notice = studio.importNotice {
                     Label(notice, systemImage: "checkmark.circle.fill")
                         .font(.footnote).foregroundStyle(Ink.teal)
@@ -74,7 +74,7 @@ struct LibraryView: View {
                         .disabled(studio.importing)
                 }
             }
-            .fileImporter(isPresented: $importing, allowedContentTypes: importTypes, allowsMultipleSelection: false) { result in
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
                 switch result {
                 case .success(let urls):
                     guard let url = urls.first else {

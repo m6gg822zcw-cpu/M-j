@@ -148,6 +148,39 @@ import UIKit
             await finishImport(project)
         } catch { reportImportFailure(error, fileName: url.lastPathComponent) }
     }
+    func importText(title: String, text: String) async -> Bool {
+        await load()
+        guard !importing else {
+            error = "正在导入另一份书稿，请等它完成后再导入。"
+            return false
+        }
+        importing = true
+        importNotice = nil
+        error = nil
+        defer { importing = false }
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectTitle = trimmedTitle.isEmpty ? "粘贴的书稿" : trimmedTitle
+        let repo = repository
+        let chunk = settings.chunkCharacters
+        let headingPattern = settings.headingPattern
+        do {
+            let project = try await Task.detached(priority: .userInitiated) {
+                guard text.utf8.count <= 16 * 1024 * 1024 else {
+                    throw StudioError.invalid("粘贴正文超过 16 MiB，请分成多部书稿导入。")
+                }
+                guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw StudioError.invalid("小说正文为空，请先粘贴或输入正文。")
+                }
+                let chapters = try ChapterParser.parse(text, title: projectTitle, headingPattern: headingPattern)
+                return try await repo.importChapters(chapters, title: projectTitle, artistID: nil, chunk: chunk)
+            }.value
+            await finishImport(project)
+            return true
+        } catch {
+            self.error = "粘贴书稿导入失败：\(error.localizedDescription)"
+            return false
+        }
+    }
     func importSample() async {
         guard !importing else { return }
         importing = true

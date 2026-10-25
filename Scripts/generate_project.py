@@ -67,7 +67,7 @@ for config in ["Debug","Release"]:
     target_settings = {
         "ASSETCATALOG_COMPILER_APPICON_NAME":"AppIcon",
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME":"AccentColor",
-        "CODE_SIGN_STYLE":"Automatic","CURRENT_PROJECT_VERSION":"5",
+        "CODE_SIGN_STYLE":"Automatic","CURRENT_PROJECT_VERSION":"6",
         "DEVELOPMENT_TEAM":"","GENERATE_INFOPLIST_FILE":"NO",
         "INFOPLIST_FILE":"App/Info.plist","MARKETING_VERSION":"1.1.3",
         "PRODUCT_BUNDLE_IDENTIFIER":"com.yourname.moxu","PRODUCT_NAME":"$(TARGET_NAME)",
