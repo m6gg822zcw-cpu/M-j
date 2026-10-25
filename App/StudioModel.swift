@@ -62,10 +62,11 @@ import UIKit
     }
     func report(_ e: Error) { error = e.localizedDescription }
     func reportImportFailure(_ e: Error, fileName: String? = nil) {
-        guard !CoordinatedImport.isCancellation(e) else { return }
         #if DEBUG
-            PickerUITestTrace.record("import.failed", detail: e.localizedDescription)
+            let diagnostic = e as NSError
+            PickerUITestTrace.record("import.failed", detail: "\(diagnostic.domain) \(diagnostic.code): \(diagnostic.localizedDescription)")
         #endif
+        guard !CoordinatedImport.isCancellation(e) else { return }
         let context = fileName.map { "未能导入「\($0)」" } ?? "未能选择导入文件"
         error = "\(context)：\(e.localizedDescription)"
     }
@@ -106,7 +107,7 @@ import UIKit
     }
     func importFile(_ url: URL) async {
         #if DEBUG
-            PickerUITestTrace.record("import.requested", detail: url.lastPathComponent)
+            PickerUITestTrace.record("import.requested", detail: "\(url.lastPathComponent), busy=\(importing)")
         #endif
         await load()
         guard !importing else {
