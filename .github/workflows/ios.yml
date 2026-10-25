@@ -17,14 +17,19 @@ jobs:
       - name: Xcode version
         run: xcodebuild -version
       - name: Core tests and simulator build
+        id: core_build
         run: bash Scripts/build.sh
       - name: Launch on a temporary iPhone simulator
+        id: import_checks
         run: bash Scripts/simulator_smoke.sh
       - name: Archive device app without signing
+        id: device_archive
+        if: ${{ always() && !cancelled() && steps.core_build.outcome == 'success' }}
         run: bash Scripts/archive_unsigned.sh
       - uses: actions/upload-artifact@v4
+        if: ${{ always() && !cancelled() && steps.device_archive.outcome == 'success' }}
         with:
-          name: Moxu-unsigned-requires-signing
+          name: ${{ steps.import_checks.outcome == 'success' && 'Moxu-unsigned-requires-signing' || 'Moxu-unsigned-import-validation-pending' }}
           path: |
             build/Moxu-unsigned.ipa
             build/Moxu-unsigned.ipa.sha256

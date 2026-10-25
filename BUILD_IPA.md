@@ -13,7 +13,7 @@
 
 成功后生成 `build/Moxu-unsigned.ipa` 及 SHA-256 校验文件。它是真机目标的未签名包，仍需签名后安装。每次归档使用独立目录，编译失败会停止；不会打包上次残留的 App。
 
-没有 Mac 时，把本目录完整提交到自己的 GitHub 仓库（保留 `.github/workflows/ios.yml`），进入 **Actions → Build iOS and core tests → Run workflow**。也可 push 自动触发。只有成功后才下载 `Moxu-unsigned-requires-signing` artifact；解压后才是 IPA。`Moxu-build-logs` 包含测试、模拟器构建及归档日志，失败时也可下载。此工作流使用 macOS runner，可能消耗账户的 Actions 配额；本轮已在用户授权仓库成功运行远程工作流。
+没有 Mac 时，把本目录完整提交到自己的 GitHub 仓库（保留 `.github/workflows/ios.yml`），进入 **Actions → Build iOS and core tests → Run workflow**。也可 push 自动触发。完整检查成功后下载 `Moxu-unsigned-requires-signing` artifact；解压后才是 IPA。若核心测试和模拟器编译通过、原生检查失败，工作流仍保留失败状态，并可生成明确标记的 `Moxu-unsigned-import-validation-pending` 测试包，供实际文件复测；该产物不表示导入已修复。`Moxu-build-logs` 包含测试、模拟器构建及归档日志，失败时也可下载。此工作流使用 macOS runner，可能消耗账户的 Actions 配额；本轮已在用户授权仓库成功运行远程工作流。
 
 如需签名 IPA，先在 Mac 的 Xcode 配置好自己已获授权的 Team、证书、私钥及描述文件，再运行（替换占位值）：
 

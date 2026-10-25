@@ -30,19 +30,22 @@ final class ImportFlowTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--moxu-picker-ui-test"]
         app.launch()
-        try importThroughPicker("PickerNovel.txt", title: "PickerNovel", app: app)
         try importThroughPicker("PickerChapters.json", title: "PickerChapters", app: app)
+        try importThroughPicker("PickerNovel.txt", title: "PickerNovel", app: app)
 
         try openPicker(app)
         let cancel = try requiredNamedElement(["Cancel", "取消"], app: app, timeout: 10)
         cancel.tap()
         try require(waitForHittable(importButton(app), timeout: 10), "取消后导入按钮未恢复")
-        // The previous notice is JSON, so a stale success label cannot satisfy this TXT import.
+        // The prior notice is also TXT; every import must independently increase the bookshelf count.
         try importThroughPicker("PickerNovel.txt", title: "PickerNovel", app: app)
     }
 
     @MainActor
     private func importThroughPicker(_ filename: String, title: String, app: XCUIApplication) throws {
+        let projectCount = app.descendants(matching: .any).matching(identifier: "project-count").firstMatch
+        try require(projectCount.waitForExistence(timeout: 15), "未找到书架作品数量")
+        let previousCount = projectCount.label
         try openPicker(app)
         let stem = (filename as NSString).deletingPathExtension
         var file: XCUIElement?
@@ -72,13 +75,15 @@ final class ImportFlowTests: XCTestCase {
         file.tap()
         let notice = app.descendants(matching: .any).matching(identifier: "import-success").firstMatch
         // Some provider presentations use selection + Open instead of opening on the first tap.
-        if !notice.waitForExistence(timeout: 2) || !notice.label.contains(title) {
+        if !notice.waitForExistence(timeout: 2) || !notice.label.contains(title) || projectCount.label == previousCount {
             if let confirm = namedElement(["Open", "打开", "開啟"], app: app) { confirm.tap() }
         }
         let success = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == true AND label CONTAINS %@", title), object: notice)
-        try require(XCTWaiter.wait(for: [success], timeout: 20) == .completed,
-                    "选取 \(filename) 后未收到对应导入成功反馈")
+        let addedProject = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND label != %@", previousCount), object: projectCount)
+        try require(XCTWaiter.wait(for: [success, addedProject], timeout: 20) == .completed,
+                    "选取 \(filename) 后未同时收到对应成功反馈和新增作品数量；导入前：\(previousCount)")
         var book = app.staticTexts[title].firstMatch
         for _ in 0..<8 {
             if book.exists && book.isHittable { break }

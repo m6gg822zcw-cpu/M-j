@@ -5,12 +5,19 @@ import UniformTypeIdentifiers
 struct LibraryView: View {
     @EnvironmentObject private var studio: StudioModel
     @State private var importing = false
+    private var importTypes: [UTType] {
+        [.plainText, .utf8PlainText, .json, .pdf]
+            + ["net.daringfireball.markdown", "org.idpf.epub-container",
+               "org.openxmlformats.wordprocessingml.document", "com.moxu.project"].compactMap { UTType($0) }
+            + [.item]
+    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
                 QuietTitle(eyebrow: "墨序 · 小说漫画工作室", title: "把文字，\n画成一部漫画。", subtitle: "让每个章节，拥有自己的镜头。\n让每个人物，始终是同一个人。")
                 HStack {
                     Label("\(studio.projects.count) 部作品", systemImage: "books.vertical")
+                        .accessibilityIdentifier("project-count")
                     Spacer()
                     Label("本地保存", systemImage: "externaldrive")
                 }.font(.caption).foregroundStyle(.secondary)
@@ -67,7 +74,7 @@ struct LibraryView: View {
                         .disabled(studio.importing)
                 }
             }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
+            .fileImporter(isPresented: $importing, allowedContentTypes: importTypes, allowsMultipleSelection: false) { result in
                 switch result {
                 case .success(let urls):
                     guard let url = urls.first else {
