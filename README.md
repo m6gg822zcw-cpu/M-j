@@ -2,7 +2,7 @@
 
 原生 SwiftUI 应用，最低 iOS / iPadOS 17。把导入的小说按章、按批改编为分镜，再使用自己的生图服务绘制画格。
 
-**v1.1.3（build 6）新增「粘贴书稿」，并修复已复现的“序章”误吞正文和部分 EPUB / DOCX 解析失败。** 95 项核心测试通过；粘贴入口正在真实 UI 验证。系统文件选择仍有未通过的检查，当前交付为明确标记的未签名测试包。详见 [小说导入修复记录](Docs/v1.1.3_小说导入修复.md)。
+**v1.1.3（build 6）新增「粘贴书稿」，并修复已复现的“序章”误吞正文和部分 EPUB / DOCX 解析失败。** 95 项核心测试、8 项打包校验、9 项原生检查通过；「粘贴书稿」真实 UI 和正文存档核对通过，未签名 IPA 已生成。系统文件选择的 JSON 界面检查仍失败，当前为明确标记的测试包，不能认定文件入口已全部修复。详见 [小说导入修复记录](Docs/v1.1.3_小说导入修复.md)。
 
 新版加入出图后的气泡编辑：拖动位置、缩放、尾尖、文字字号、撤销重做和本地保存；阅读与 PDF / PNG / HTML 导出共用同一排版。可先在书架点「离线试用气泡编辑」，无需 API。给 Codex 生成 IPA 请先读 [构建交接](BUILD_IPA.md)。
 
@@ -16,7 +16,7 @@
 
     bash Scripts/build.sh
 
-它会先运行打包校验测试、核心测试，再构建模拟器应用。`Scripts/archive_unsigned.sh` 可在有 Xcode 的 Mac 上生成**需要自行签名**的 `build/Moxu-unsigned.ipa`。具备本机证书和描述文件后，`Scripts/archive_signed.sh` 可导出签名 IPA。附带的 GitHub Actions 工作流提供未签名打包和日志下载；已在你的 GitHub 仓库启用并成功执行云构建，见 [构建结果](https://github.com/m6gg822zcw-cpu/M-j/actions/runs/40143421314)。
+它会先运行打包校验测试、核心测试，再构建模拟器应用。`Scripts/archive_unsigned.sh` 可在有 Xcode 的 Mac 上生成**需要自行签名**的 `build/Moxu-unsigned.ipa`。具备本机证书和描述文件后，`Scripts/archive_signed.sh` 可导出签名 IPA。附带的 GitHub Actions 工作流提供未签名打包和日志下载；已在你的 GitHub 仓库启用，当前测试包见 [构建与检查记录（包含未通过项）](https://github.com/m6gg822zcw-cpu/M-j/actions/runs/40172793980)。
 
 ## 粘贴小说正文（v1.1.3）
 
